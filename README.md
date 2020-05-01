@@ -17,7 +17,7 @@ If none are found, or if the configuration is underspecified, the tool is going 
 
 The supported configuration settings are:
 
-```json
+```js
 { // all settings are optional, comments not allowed
   "ssh": {
     "address": "10.11.99.1", // works over WiFi too!
@@ -33,7 +33,11 @@ The supported configuration settings are:
 }
 ```
 
+Tested with Python 3, PyQt 5.14.2, MacOs 10.15.4, reMarkable firmware 2.1.1.3
+
 ## Requirements
+
+On your computer:
 
 - Python 3
 - PyQt5
@@ -41,6 +45,11 @@ The supported configuration settings are:
 - lz4framed
 
 They can be installed via `pip install pyqt5 paramiko lz4framed`.
+
+On the reMarkable:
+
+- lz4 which can be installed by running `scp lz4.arm.static <REMARKABLE>:lz4`.
+
 
 ## To Do
 
