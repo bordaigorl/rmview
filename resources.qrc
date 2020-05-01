@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>assets/rmview.svg</file>
+    <file>assets/tablet.svg</file>
+    <file>assets/dead.svg</file>
+</qresource>
+</RCC>
