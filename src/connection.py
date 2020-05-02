@@ -1,6 +1,6 @@
 # from PyQt5.QtGui import *
-# from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 
 
 import paramiko
@@ -34,9 +34,9 @@ class rMConnect(QRunnable):
     # self.key = key
     try:
       self.client = paramiko.SSHClient()
+      self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
       if key is not None:
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         key = os.path.expanduser(key)
         try:
           pkey = paramiko.RSAKey.from_private_key_file(key)
