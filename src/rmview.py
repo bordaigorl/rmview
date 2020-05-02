@@ -34,7 +34,10 @@ class rMViewApp(QApplication):
   def __init__(self, args):
     super(rMViewApp, self).__init__(args)
     config_files = [] if len(args) < 2 else [args[1]]
-    config_files += ['rmview.json', os.environ.get("RMVIEW_CONF")]
+    config_files += ['rmview.json']
+    rmview_conf = os.environ.get("RMVIEW_CONF") 
+    if rmview_conf is not None:
+        config_files += [rmview_conf]
     log.info("Searching configuration in " + ', '.join(config_files))
     for f in config_files:
       try:
