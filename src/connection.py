@@ -41,7 +41,7 @@ class rMConnect(QRunnable):
         try:
           pkey = paramiko.RSAKey.from_private_key_file(key)
         except paramiko.ssh_exception.PasswordRequiredException:
-          passphrase, ok = QInputDialog.getText(self.viewer, "Configuration","SSH key passphrase:", QLineEdit.Password)
+          passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:", QLineEdit.Password)
           if ok:
             pkey = paramiko.RSAKey.from_private_key_file(key, password=passphrase)
           else:
