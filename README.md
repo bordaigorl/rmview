@@ -27,7 +27,7 @@ The supported configuration settings are:
     "timeout": 1 // in seconds
   },
   "orientation": "portrait", // default: landscape
-  "pen_size": 10,
+  "pen_size": 10, // set to 0 to disable
   "pen_color": "red",
   "fetch_frame_delay": 0.03 // sleep 0.03s on remarkable before fetching new frame (default is no delay)
 }
@@ -44,7 +44,7 @@ On your computer:
 - Paramiko
 - lz4framed
 
-They can be installed via `pip install pyqt5 paramiko lz4framed`.
+They can be installed via `pip install pyqt5 paramiko py-lz4framed`.
 
 On the reMarkable:
 
@@ -54,11 +54,13 @@ On the reMarkable:
 ## To Do
 
  - [ ] Settings dialog
+ - [ ] Zoom menu items (Actual size, Zoom in/out)
  - [ ] About dialog
  - [ ] Pause stream of screen/pen
  - [ ] Action to spawn a static viewer on a frame
  - [ ] Build system
  - [ ] Bundle
+ - [ ] Add interaction for Lamy button? (1 331 1 down, 1 331 0 up)
 
 
 ## Credits
@@ -69,7 +71,7 @@ I took inspiration from the following projects:
 - [remarkable_mouse](https://github.com/Evidlo/remarkable_mouse/)
 - [reStream](https://github.com/rien/reStream)
 
-Icons adapted from designs by Freepik, xnimrodx from [www.flaticon.com][]
+Icons adapted from designs by Freepik, xnimrodx from www.flaticon.com
 
 ## Licence
 
