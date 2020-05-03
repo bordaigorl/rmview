@@ -31,11 +31,11 @@ class QtImageViewer(QGraphicsView):
     self.menu.addAction(act)
     ###
     act = QAction('Zoom In', self)
-    act.triggered.connect(lambda: self.scale(self.zoomInFactor, self.zoomInFactor))
+    act.triggered.connect(self.zoomIn)
     self.menu.addAction(act)
     ###
     act = QAction('Zoom Out', self)
-    act.triggered.connect(lambda: self.scale(self.zoomOutFactor, self.zoomOutFactor))
+    act.triggered.connect(self.zoomOut)
     self.menu.addAction(act)
     ###
     self.menu.addSeparator() # --------------------------
@@ -160,6 +160,14 @@ class QtImageViewer(QGraphicsView):
     self._rotation -= 90
     self.updateViewer()
 
+  def zoomIn(self):
+    self._fit = False
+    self.scale(self.zoomInFactor, self.zoomInFactor)
+
+  def zoomOut(self):
+    self._fit = False
+    self.scale(self.zoomOutFactor, self.zoomOutFactor)
+
   def setFit(self, f):
     self._fit = f
     self.updateViewer()
@@ -182,7 +190,7 @@ class QtImageViewer(QGraphicsView):
     elif event.key() == Qt.Key_S:
       self.screenshot()
     elif event.key() == Qt.Key_Plus:
-      self.scale(self.zoomInFactor, self.zoomInFactor)
+      self.zoomIn()
     elif event.key() == Qt.Key_Minus:
-      self.scale(self.zoomOutFactor, self.zoomOutFactor)
+      self.zoomOut()
 
