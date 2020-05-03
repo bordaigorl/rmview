@@ -1,5 +1,7 @@
 # rMview: a fast live viewer for reMarkable
 
+![screenshot](https://raw.githubusercontent.com/bordaigorl/rmview/master/screenshot.png)
+
 ## Instructions
 
 To run the program you need python with pyqt5 installed.
