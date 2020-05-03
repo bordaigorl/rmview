@@ -138,7 +138,7 @@ class rMViewApp(QApplication):
     self.penworker = PointerWorker(ssh)
     self.threadpool.start(self.penworker)
     self.pen = self.viewer.scene.addEllipse(0,0,self.pen_size,self.pen_size,
-                                            pen=QPen(QColorConstants.White),
+                                            pen=QPen(QColor('white')),
                                             brush=QBrush(QColor(self.config.get('pen_color', 'red'))))
     self.pen.hide()
     self.pen.setZValue(100)
