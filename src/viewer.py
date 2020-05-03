@@ -3,11 +3,14 @@
 """
 
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
-from PyQt5.QtGui import QImage, QPixmap, QTransform
+from PyQt5.QtGui import QImage, QPixmap, QTransform, QIcon
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QAction, QMenu
 
 
 class QtImageViewer(QGraphicsView):
+
+    zoomInFactor = 1.25
+    zoomOutFactor = 1 / zoomInFactor
 
     def __init__(self):
       QGraphicsView.__init__(self)
@@ -24,20 +27,34 @@ class QtImageViewer(QGraphicsView):
 
       self.menu = QMenu(self)
       act = QAction('Fit to view', self)
-      # act.setShortcut('Ctrl+S')
       act.triggered.connect(lambda: self.setFit(True))
       self.menu.addAction(act)
+      ###
+      act = QAction('Actual Size', self)
+      act.triggered.connect(lambda: self.actualSize())
+      self.menu.addAction(act)
+      ###
+      act = QAction('Zoom In', self)
+      act.triggered.connect(lambda: self.scale(self.zoomInFactor, self.zoomInFactor))
+      self.menu.addAction(act)
+      ###
+      act = QAction('Zoom Out', self)
+      act.triggered.connect(lambda: self.scale(self.zoomOutFactor, self.zoomOutFactor))
+      self.menu.addAction(act)
+      ###
+      self.menu.addSeparator() # --------------------------
+      ###
       act = QAction('Rotate clockwise', self)
-      # act.setShortcut('Ctrl+Right')
       act.triggered.connect(self.rotateCW)
       self.menu.addAction(act)
+      ###
       act = QAction('Rotate counter-clockwise', self)
-      # act.setShortcut('Ctrl+Left')
       act.triggered.connect(self.rotateCCW)
       self.menu.addAction(act)
-      self.menu.addSeparator()
+      ###
+      self.menu.addSeparator() # --------------------------
+      ###
       act = QAction('Save screenshot', self)
-      # act.setShortcut('Ctrl+S')
       act.triggered.connect(self.screenshot)
       self.menu.addAction(act)
 
@@ -108,22 +125,16 @@ class QtImageViewer(QGraphicsView):
         else:
             self._fit = False
 
-            # Zoom Factor
-            zoomInFactor = 1.25
-            zoomOutFactor = 1 / zoomInFactor
-
-            # Set Anchors
             self.setTransformationAnchor(QGraphicsView.NoAnchor)
             self.setResizeAnchor(QGraphicsView.NoAnchor)
 
-            # Save the scene pos
             oldPos = self.mapToScene(event.pos())
 
             # Zoom
             if event.angleDelta().y() > 0:
-                zoomFactor = zoomInFactor
+                zoomFactor = self.zoomInFactor
             else:
-                zoomFactor = zoomOutFactor
+                zoomFactor = self.zoomOutFactor
             self.scale(zoomFactor, zoomFactor)
 
             # Get the new position
@@ -156,13 +167,25 @@ class QtImageViewer(QGraphicsView):
       self._fit = f
       self.updateViewer()
 
+    def actualSize(self):
+      self._fit = False
+      self.resetTransform()
+      self.scale(1/self.devicePixelRatio(), 1/self.devicePixelRatio())
+      self.rotate(self._rotation)
+
     def keyPressEvent(self, event):
       if event.key() == Qt.Key_Left:
         self.rotateCCW()
       elif event.key() == Qt.Key_Right:
         self.rotateCW()
-      elif event.key() == Qt.Key_1:
+      elif event.key() == Qt.Key_F:
         self.setFit(True)
+      elif event.key() == Qt.Key_1:
+        self.actualSize()
       elif event.key() == Qt.Key_S:
         self.screenshot()
+      elif event.key() == Qt.Key_Plus:
+        self.scale(self.zoomInFactor, self.zoomInFactor)
+      elif event.key() == Qt.Key_Minus:
+        self.scale(self.zoomOutFactor, self.zoomOutFactor)
 

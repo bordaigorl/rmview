@@ -54,7 +54,6 @@ On the reMarkable:
 ## To Do
 
  - [ ] Settings dialog
- - [ ] Zoom menu items (Actual size, Zoom in/out)
  - [ ] About dialog
  - [ ] Pause stream of screen/pen
  - [ ] Action to spawn a static viewer on a frame
