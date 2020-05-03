@@ -56,7 +56,6 @@ On the reMarkable:
  - [ ] Settings dialog
  - [ ] About dialog
  - [ ] Pause stream of screen/pen
- - [ ] Action to spawn a static viewer on a frame
  - [ ] Build system
  - [ ] Bundle
  - [ ] Add interaction for Lamy button? (1 331 1 down, 1 331 0 up)

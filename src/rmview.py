@@ -35,7 +35,7 @@ class rMViewApp(QApplication):
     super(rMViewApp, self).__init__(args)
     config_files = [] if len(args) < 2 else [args[1]]
     config_files += ['rmview.json']
-    rmview_conf = os.environ.get("RMVIEW_CONF") 
+    rmview_conf = os.environ.get("RMVIEW_CONF")
     if rmview_conf is not None:
         config_files += [rmview_conf]
     log.info("Searching configuration in " + ', '.join(config_files))
@@ -56,6 +56,10 @@ class rMViewApp(QApplication):
     self.setWindowIcon(QIcon(':/assets/rmview.svg'))
 
     self.viewer = QtImageViewer()
+    act = QAction('Clone current frame', self)
+    act.triggered.connect(self.cloneViewer)
+    self.viewer.menu.addSeparator()
+    self.viewer.menu.addAction(act)
     self.viewer.setWindowTitle("rMview")
     self.viewer.resize(QDesktopWidget().availableGeometry(self.viewer).size() * 0.7);
     if self.config.get('orientation', 'landscape') == 'landscape':
@@ -145,12 +149,19 @@ class rMViewApp(QApplication):
 
   @pyqtSlot(int, int)
   def movePen(self, x, y):
-      y = 20951 - y
-      ratio_width, ratio_height = WIDTH / 15725, HEIGHT / 20951
-      scaling = ratio_width if ratio_width > ratio_height else ratio_height
-      x = scaling * (x - (15725 - WIDTH / scaling) / 2)
-      y = scaling * (y - (20951 - HEIGHT / scaling) / 2)
-      self.pen.setRect(x,y,self.pen_size,self.pen_size)
+    y = 20951 - y
+    ratio_width, ratio_height = WIDTH / 15725, HEIGHT / 20951
+    scaling = ratio_width if ratio_width > ratio_height else ratio_height
+    x = scaling * (x - (15725 - WIDTH / scaling) / 2)
+    y = scaling * (y - (20951 - HEIGHT / scaling) / 2)
+    self.pen.setRect(x,y,self.pen_size,self.pen_size)
+
+  @pyqtSlot()
+  def cloneViewer(self):
+    img = self.viewer.image()
+    v = QtImageViewer()
+    v.setImage(img)
+    v.show()
 
 
   @pyqtSlot(Exception)
