@@ -86,6 +86,8 @@ class PWSignals(QObject):
   onPenMove = pyqtSignal(int, int)
   onPenPress = pyqtSignal()
   onPenLift = pyqtSignal()
+  onPenNear = pyqtSignal()
+  onPenFar = pyqtSignal()
 
 LIFTED = 0
 PRESSED = 1
@@ -149,6 +151,12 @@ class PointerWorker(QRunnable):
         if new_x and new_y:
           self.signals.onPenMove.emit(x, y)
           new_x = new_y = False
+
+      if e_type == e_type_key and e_code == e_code_stylus_proximity:
+        if e_value == 0:
+          self.signals.onPenFar.emit()
+        else:
+          self.signals.onPenNear.emit()
 
 
 

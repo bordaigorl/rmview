@@ -145,6 +145,8 @@ class rMViewApp(QApplication):
     self.penworker.signals.onPenMove.connect(self.movePen)
     self.penworker.signals.onPenLift.connect(self.pen.show)
     self.penworker.signals.onPenPress.connect(self.pen.hide)
+    self.penworker.signals.onPenNear.connect(self.pen.show)
+    self.penworker.signals.onPenFar.connect(self.pen.hide)
 
 
   @pyqtSlot(int, int)
