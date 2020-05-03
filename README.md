@@ -32,6 +32,7 @@ The supported configuration settings are:
   "pen_size": 10, // set to 0 to disable
   "pen_color": "red",
   "fetch_frame_delay": 0.03 // sleep 0.03s on remarkable before fetching new frame (default is no delay)
+  "lz4_path_on_remarkable": "/usr/opt/lz4" // default: $HOME/lz4
 }
 ```
 

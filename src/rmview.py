@@ -130,7 +130,7 @@ class rMViewApp(QApplication):
   def connected(self, ssh):
     self.ssh = ssh
     self.viewer.setWindowTitle("rMview - " + self.config.get('ssh').get('address'))
-    self.fbworker = FrameBufferWorker(ssh, delay=self.config.get('fetch_frame_delay'))
+    self.fbworker = FrameBufferWorker(ssh, delay=self.config.get('fetch_frame_delay'), lz4_path=self.config.get('lz4_path_on_remarkable'))
     self.fbworker.signals.onNewFrame.connect(lambda image: self.viewer.setImage(image))
     self.fbworker.signals.onFatalError.connect(self.frameError)
     self.threadpool.start(self.fbworker)
