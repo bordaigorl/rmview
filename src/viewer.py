@@ -1,7 +1,3 @@
-""" QtImageViewer.py: PyQt image viewer widget for a QPixmap in a QGraphicsView scene with mouse zooming and panning.
-
-"""
-
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
 from PyQt5.QtGui import QImage, QPixmap, QTransform, QIcon
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QAction, QMenu
@@ -94,6 +90,7 @@ class QtImageViewer(QGraphicsView):
     else:
       self._pixmap = self.scene.addPixmap(pixmap)
       self._pixmap.setZValue(-1)
+    self._pixmap.setTransformationMode(Qt.SmoothTransformation)
     self.setSceneRect(QRectF(pixmap.rect()))  # Set scene size to image size.
     # self.fitInView(self.sceneRect(), self.aspectRatioMode)  # Show entire image (use current aspect ratio mode).
     self.updateViewer()
