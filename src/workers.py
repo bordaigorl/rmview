@@ -17,7 +17,7 @@ from lz4framed import Decompressor, Lz4FramedNoDataError
 
 
 
-SHOW_FPS = True
+SHOW_FPS = False
 
 class FBWSignals(QObject):
   onFatalError = pyqtSignal(Exception)
@@ -111,44 +111,44 @@ class PointerWorker(QRunnable):
     state = LIFTED
 
     while not self._stop:
-        try:
-          _, _, e_type, e_code, e_value = struct.unpack('2IHHi', penstream.read(16))
-        except struct.error:
-          return
-        except Exception as e:
-          print('Error in pointer worker: %s %s', type(e), e)
-          return
+      try:
+        _, _, e_type, e_code, e_value = struct.unpack('2IHHi', penstream.read(16))
+      except struct.error:
+        return
+      except Exception as e:
+        print('Error in pointer worker: %s %s', type(e), e)
+        return
 
-        # decoding adapted from remarkable_mouse
-        if e_type == e_type_abs:
-
-            # handle x direction
-            if e_code == e_code_stylus_xpos:
-                x = e_value
-                new_x = True
-
-            # handle y direction
-            if e_code == e_code_stylus_ypos:
-                y = e_value
-                new_y = True
-
-            # handle draw
-            if e_code == e_code_stylus_pressure:
-                if e_value > self.threshold:
-                    if state == LIFTED:
-                        log.debug('PRESS')
-                        state = PRESSED
-                        self.signals.onPenPress.emit()
-                else:
-                    if state == PRESSED:
-                        log.debug('RELEASE')
-                        state = LIFTED
-                        self.signals.onPenLift.emit()
+      # decoding adapted from remarkable_mouse
+      if e_type == e_type_abs:
 
 
-            if new_x and new_y:
-                self.signals.onPenMove.emit(x, y)
-                new_x = new_y = False
+        # handle x direction
+        if e_code == e_code_stylus_xpos:
+          x = e_value
+          new_x = True
+
+        # handle y direction
+        if e_code == e_code_stylus_ypos:
+          y = e_value
+          new_y = True
+
+        # handle draw
+        if e_code == e_code_stylus_pressure:
+          if e_value > self.threshold:
+            if state == LIFTED:
+              log.debug('PRESS')
+              state = PRESSED
+              self.signals.onPenPress.emit()
+          else:
+            if state == PRESSED:
+              log.debug('RELEASE')
+              state = LIFTED
+              self.signals.onPenLift.emit()
+
+        if new_x and new_y:
+          self.signals.onPenMove.emit(x, y)
+          new_x = new_y = False
 
 
 
