@@ -52,6 +52,7 @@ They can be installed via `pip install pyqt5 paramiko py-lz4framed`.
 On the reMarkable:
 
 - lz4 which can be installed by running `scp lz4.arm.static <REMARKABLE>:lz4`.
+  Make sure `lz4` is executable by running `ssh <REMARKABLE> chmod +x lz4`.
 
 
 ## To Do
