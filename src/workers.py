@@ -40,7 +40,6 @@ class FrameBufferWorker(QRunnable):
     """.format(bytes=TOTAL_BYTES,
                delay="sleep "+str(delay) if delay else "true",
                lz4_path=lz4_path or "$HOME/lz4")
-    print(self._read_loop)
     self.ssh = ssh
     self.img_format = img_format
     self.signals = FBWSignals()
@@ -80,9 +79,13 @@ class FrameBufferWorker(QRunnable):
           break
     except Lz4FramedNoDataError:
       e = rmerr.read().decode('ascii')
-      if rmstream.channel.recv_exit_status() == 127:
+      s = rmstream.channel.recv_exit_status()
+      if s == 127:
         log.info("Check if your remarkable has lz4 installed! %s", e)
         self.signals.onFatalError.emit(Exception(e))
+      else:
+        log.warning("Frame data stream is empty.\nExit status: %d %s", s, e)
+
     except Exception as e:
       log.error("Error: %s %s", type(e), e)
       self.signals.onFatalError.emit(e)
