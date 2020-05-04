@@ -48,6 +48,7 @@ On your computer:
 - lz4framed
 
 They can be installed via `pip install pyqt5 paramiko py-lz4framed`.
+If you use Anaconda, please install the dependencies via `conda` (and not `pip`).
 
 On the reMarkable:
 
@@ -76,7 +77,7 @@ I took inspiration from the following projects:
 Icons adapted from designs by Freepik, xnimrodx from www.flaticon.com
 
 
-# Disclaimer
+## Disclaimer
 
 This project is not affiliated to, nor endorsed by, [reMarkable AS](https://remarkable.com/).
 **I assume no responsiblitiy for any damage done to your device due to the use of this software.**
