@@ -15,6 +15,11 @@ log = logging.getLogger('rmview')
 
 from lz4framed import Decompressor, Lz4FramedNoDataError
 
+try:
+  GRAY16 = QImage.Format_Grayscale16
+except Exception:
+  GRAY16 = QImage.Format_RGB16
+RGB16 = QImage.Format_RGB16
 
 
 SHOW_FPS = False
@@ -28,7 +33,7 @@ class FrameBufferWorker(QRunnable):
 
   _stop = False
 
-  def __init__(self, ssh, delay=None, lz4_path=None):
+  def __init__(self, ssh, delay=None, lz4_path=None, img_format=GRAY16):
     super(FrameBufferWorker, self).__init__()
     self._read_loop = """\
       while dd if=/dev/fb0 count=1 bs={bytes} 2>/dev/null; do {delay}; done | {lz4_path}\
@@ -37,6 +42,7 @@ class FrameBufferWorker(QRunnable):
                lz4_path=lz4_path or "$HOME/lz4")
     print(self._read_loop)
     self.ssh = ssh
+    self.img_format = img_format
     self.signals = FBWSignals()
 
   def stop(self):
@@ -61,8 +67,7 @@ class FrameBufferWorker(QRunnable):
           new_pix = data[:TOTAL_BYTES]
           data = data[TOTAL_BYTES:]
           if new_pix != pix:
-            self.signals.onNewFrame.emit(QImage(new_pix, WIDTH, HEIGHT, WIDTH * 2, QImage.Format_Grayscale16))
-            # Format_RGB16 works too but has slower performance?
+            self.signals.onNewFrame.emit(QImage(new_pix, WIDTH, HEIGHT, WIDTH * 2, self.img_format))
           pix = new_pix
           if SHOW_FPS:
             f += 1
