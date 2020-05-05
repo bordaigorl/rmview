@@ -22,7 +22,8 @@ class QtImageViewer(QGraphicsView):
     self.setAlignment(Qt.AlignCenter)
 
     self.menu = QMenu(self)
-    act = QAction('Fit to view', self)
+    act = QAction('Fit to view', self, checkable=True)
+    self.fitAction = act
     act.triggered.connect(lambda: self.setFit(True))
     self.menu.addAction(act)
     ###
@@ -58,6 +59,7 @@ class QtImageViewer(QGraphicsView):
     self._rotation = 0 # used to produce a rotated screenshot
 
   def contextMenuEvent(self, event):
+    self.fitAction.setChecked(self._fit)
     self.menu.exec_(self.mapToGlobal(event.pos()))
 
   def hasImage(self):
