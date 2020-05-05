@@ -80,7 +80,7 @@ Icons adapted from designs by Freepik, xnimrodx from www.flaticon.com
 ## Disclaimer
 
 This project is not affiliated to, nor endorsed by, [reMarkable AS](https://remarkable.com/).
-**I assume no responsiblitiy for any damage done to your device due to the use of this software.**
+**I assume no responsibility for any damage done to your device due to the use of this software.**
 
 ## Licence
 
