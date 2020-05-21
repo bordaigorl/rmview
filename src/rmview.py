@@ -62,10 +62,12 @@ class rMViewApp(QApplication):
     self.viewer.menu.addSeparator()
     self.viewer.menu.addAction(act)
     self.viewer.setWindowTitle("rMview")
-    self.viewer.resize(QDesktopWidget().availableGeometry(self.viewer).size() * 0.7);
+    self.viewer.show()
     if self.config.get('orientation', 'landscape') == 'landscape':
       self.viewer.rotateCW()
-    self.viewer.show()
+      self.autoResize(WIDTH / HEIGHT)
+    else:
+      self.autoResize(HEIGHT / WIDTH)
 
     # bar = QMenuBar()
     # menu = bar.addMenu('&View')
@@ -93,6 +95,18 @@ class rMViewApp(QApplication):
     ecode = self.exec_()
     print('\nBye!')
     sys.exit(ecode)
+
+  def autoResize(self, ratio):
+    dg = self.desktop().availableGeometry(self.viewer)
+    ds = dg.size() * 0.7
+    if ds.width() * ratio > ds.height():
+      ds.setWidth(ds.height() / ratio)
+    else:
+      ds.setHeight(ds.width() * ratio)
+    self.viewer.resize(ds)
+    fg = self.viewer.frameGeometry()
+    fg.moveCenter(dg.center())
+    self.viewer.move(fg.topLeft())
 
   def ensureConnConfig(self):
     if self.config['ssh'].get('address') is None:
