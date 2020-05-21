@@ -46,9 +46,10 @@ class rMViewApp(QApplication):
           self.config_file = config_file
           log.info("Fetching configuration from " + f)
           break
+      except json.JSONDecodeError as e:
+        log.error("Malformed configuration in %s: %s" % (f, e))
       except Exception as e:
-          log.debug("Configuration failure in %s: %s" % (f, e))
-          pass
+        log.debug("Configuration failure in %s: %s" % (f, e))
     self.config.setdefault('ssh', {})
     self.pen_size = self.config.get('pen_size', self.pen_size)
 
