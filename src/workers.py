@@ -53,7 +53,6 @@ class FrameBufferWorker(QRunnable):
     _, rmstream, rmerr = self.ssh.exec_command(self._read_loop)
 
     data = b''
-    pix = None
     if SHOW_FPS:
       f = 0
       t = time.perf_counter()
@@ -63,11 +62,9 @@ class FrameBufferWorker(QRunnable):
       for chunk in Decompressor(rmstream):
         data += chunk
         while len(data) >= TOTAL_BYTES:
-          new_pix = data[:TOTAL_BYTES]
+          pix = data[:TOTAL_BYTES]
           data = data[TOTAL_BYTES:]
-          if new_pix != pix:
-            self.signals.onNewFrame.emit(QImage(new_pix, WIDTH, HEIGHT, WIDTH * 2, self.img_format))
-          pix = new_pix
+          self.signals.onNewFrame.emit(QImage(pix, WIDTH, HEIGHT, WIDTH * 2, self.img_format))
           if SHOW_FPS:
             f += 1
             if f % 10 == 0:

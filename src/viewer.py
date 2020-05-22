@@ -10,7 +10,7 @@ class QtImageViewer(QGraphicsView):
 
   def __init__(self):
     QGraphicsView.__init__(self)
-    self.setAttribute(Qt.WA_OpaquePaintEvent, True)
+    # self.setAttribute(Qt.WA_OpaquePaintEvent, True)
 
     self.scene = QGraphicsScene()
     self.setScene(self.scene)
