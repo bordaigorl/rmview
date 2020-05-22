@@ -148,8 +148,7 @@ class QtImageViewer(QGraphicsView):
     if img is not None:
       fileName, ok = QFileDialog.getSaveFileName(self, "Save screenshot...", "rm-screenshot.png")
       if ok and fileName:
-        print(self._rotation)
-        img = img.transformed(QTransform().rotate(self._rotation));
+        img = img.transformed(QTransform().rotate(self._rotation))
         img.save(fileName)
 
   def rotateCW(self):

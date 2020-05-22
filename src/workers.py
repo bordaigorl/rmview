@@ -129,7 +129,7 @@ class PointerWorker(QRunnable):
       except struct.error:
         return
       except Exception as e:
-        print('Error in pointer worker: %s %s', type(e), e)
+        log.error('Error in pointer worker: %s %s', type(e), e)
         return
 
       # decoding adapted from remarkable_mouse
