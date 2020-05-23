@@ -57,6 +57,8 @@ class rMViewApp(QApplication):
     self.setWindowIcon(QIcon(':/assets/rmview.svg'))
 
     self.viewer = QtImageViewer()
+    if 'bg_color' in self.config:
+      self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
     act = QAction('Clone current frame', self)
     act.triggered.connect(self.cloneViewer)
     self.viewer.menu.addSeparator()
