@@ -93,9 +93,6 @@ class rMViewApp(QApplication):
     self.aboutToQuit.connect(self.joinWorkers)
     self.requestConnect()
 
-    ecode = self.exec_()
-    print('\nBye!')
-    sys.exit(ecode)
 
   def autoResize(self, ratio):
     dg = self.desktop().availableGeometry(self.viewer)
@@ -212,4 +209,6 @@ class rMViewApp(QApplication):
 if __name__ == '__main__':
   log.setLevel(logging.INFO)
   QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-  rMViewApp(sys.argv)
+  ecode = rMViewApp(sys.argv).exec_()
+  print('\nBye!')
+  sys.exit(ecode)
