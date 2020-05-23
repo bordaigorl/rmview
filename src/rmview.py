@@ -88,9 +88,8 @@ class rMViewApp(QApplication):
     self.ensureConnConfig()
 
     self.threadpool = QThreadPool()
-    self.requestConnect()
-
     self.aboutToQuit.connect(self.joinWorkers)
+    self.requestConnect()
 
     ecode = self.exec_()
     print('\nBye!')
@@ -100,9 +99,9 @@ class rMViewApp(QApplication):
     dg = self.desktop().availableGeometry(self.viewer)
     ds = dg.size() * 0.7
     if ds.width() * ratio > ds.height():
-      ds.setWidth(ds.height() / ratio)
+      ds.setWidth(int(ds.height() / ratio))
     else:
-      ds.setHeight(ds.width() * ratio)
+      ds.setHeight(int(ds.width() * ratio))
     self.viewer.resize(ds)
     fg = self.viewer.frameGeometry()
     fg.moveCenter(dg.center())
