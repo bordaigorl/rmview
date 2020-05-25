@@ -112,11 +112,13 @@ class PointerWorker(QRunnable):
     self.signals = PWSignals()
 
   def stop(self):
+    self._penkill.write('\n')
     self._stop = True
 
   @pyqtSlot()
   def run(self):
-    _, penstream, _ = self.ssh.exec_command('cat /dev/input/event0')
+    penkill, penstream, _ = self.ssh.exec_command('cat /dev/input/event0 & { read ; kill %1; }')
+    self._penkill = penkill
     new_x = new_y = False
     state = LIFTED
 
