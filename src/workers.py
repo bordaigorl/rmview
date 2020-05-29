@@ -15,32 +15,74 @@ log = logging.getLogger('rmview')
 
 
 from twisted.internet.protocol import Protocol
-from twisted.internet import protocol
+from twisted.internet import protocol, reactor
 from twisted.application import internet, service
 
-from vncdotool.rfb import *
+from rfb import *
 
-try:
-  GRAY16 = QImage.Format_Grayscale16
-except Exception:
-  GRAY16 = QImage.Format_RGB16
-RGB16 = QImage.Format_RGB16
+IMG_FORMAT = QImage.Format_Grayscale16
+BYTES_PER_PIXEL = 2
 
-
-SHOW_FPS = False
 
 class FBWSignals(QObject):
   onFatalError = pyqtSignal(Exception)
   onNewFrame = pyqtSignal(QImage)
 
+def _zrle_next_bit(it, pixels_in_tile):
+    num_pixels = 0
+    while True:
+        b = ord(next(it))
+
+        for n in range(8):
+            value = b >> (7 - n)
+            yield value & 1
+
+            num_pixels += 1
+            if num_pixels == pixels_in_tile:
+                return
+
+
+def _zrle_next_dibit(it, pixels_in_tile):
+    num_pixels = 0
+    while True:
+        b = ord(next(it))
+
+        for n in range(0, 8, 2):
+            value = b >> (6 - n)
+            yield value & 3
+
+            num_pixels += 1
+            if num_pixels == pixels_in_tile:
+                return
+
+
+def _zrle_next_nibble(it, pixels_in_tile):
+    num_pixels = 0
+    while True:
+        b = ord(next(it))
+
+        for n in range(0, 8, 4):
+            value = b >> (4 - n)
+            yield value & 15
+
+            num_pixels += 1
+            if num_pixels == pixels_in_tile:
+                return
+
+
 class RFBTest(RFBClient):
-  img = QImage(WIDTH, HEIGHT, GRAY16)
+  img = QImage(WIDTH, HEIGHT, IMG_FORMAT)
   painter = QPainter(img)
 
   def vncConnectionMade(self):
     self.signals = self.factory.signals
-    self.setEncodings([RAW_ENCODING])
+    self.setEncodings([
+      HEXTILE_ENCODING,
+      CORRE_ENCODING,
+      RRE_ENCODING,
+      RAW_ENCODING ])
     self.framebufferUpdateRequest()
+
 
   def commitUpdate(self, rectangles=None):
     self.signals.onNewFrame.emit(self.img)
@@ -49,10 +91,10 @@ class RFBTest(RFBClient):
   def updateRectangle(self, x, y, width, height, data):
     if (width == WIDTH) and (height == HEIGHT):
       self.painter.end()
-      self.img = QImage(data, WIDTH, HEIGHT, WIDTH * 2, GRAY16)
+      self.img = QImage(data, WIDTH, HEIGHT, WIDTH * BYTES_PER_PIXEL, IMG_FORMAT)
       self.painter = QPainter(self.img)
     else:
-      self.painter.drawImage(x,y,QImage(data, width, height, width * 2, GRAY16))
+      self.painter.drawImage(x,y,QImage(data, width, height, width * BYTES_PER_PIXEL, IMG_FORMAT))
 
 
 
@@ -70,7 +112,6 @@ class RFBTestFactory(RFBFactory):
 
   def clientConnectionFailed(self, connector, reason):
     print("connection failed:", reason)
-    from twisted.internet import reactor
     reactor.callFromThread(reactor.stop)
 
 
@@ -78,7 +119,7 @@ class FrameBufferWorker(QRunnable):
 
   _stop = False
 
-  def __init__(self, ssh, delay=None, lz4_path=None, img_format=GRAY16):
+  def __init__(self, ssh, delay=None, lz4_path=None, img_format=IMG_FORMAT):
     super(FrameBufferWorker, self).__init__()
     self._read_loop = """\
       while dd if=/dev/fb0 count=1 bs={bytes} 2>/dev/null; do {delay}; done | {lz4_path}\
@@ -91,7 +132,6 @@ class FrameBufferWorker(QRunnable):
     self.signals = FBWSignals()
 
   def stop(self):
-    from twisted.internet import reactor
     print("Stopping")
     reactor.callFromThread(reactor.stop)
     self.ssh.exec_command("killall rM-vnc-server")
@@ -100,52 +140,13 @@ class FrameBufferWorker(QRunnable):
 
   @pyqtSlot()
   def run(self):
+    _,out,_ = self.ssh.exec_command("insmod mxc_epdc_fb_damage.ko")
+    out.channel.recv_exit_status()
     _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
-    for line in out:
-      print("STARTED", line)
-      break
-    self.vncClient = internet.TCPClient("192.168.1.111", 5900, RFBTestFactory(self.signals))
-    from twisted.internet import reactor
+    print(next(out))
+    self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBTestFactory(self.signals))
     self.vncClient.startService()
     reactor.run(installSignalHandlers=0)
-
-    # _, rmstream, rmerr = self.ssh.exec_command(self._read_loop)
-
-    # data = b''
-    # if SHOW_FPS:
-    #   f = 0
-    #   t = time.perf_counter()
-    #   fps = 0
-
-    # try:
-    #   for chunk in Decompressor(rmstream):
-    #     data += chunk
-    #     while len(data) >= TOTAL_BYTES:
-    #       pix = data[:TOTAL_BYTES]
-    #       data = data[TOTAL_BYTES:]
-    #       self.signals.onNewFrame.emit(QImage(pix, WIDTH, HEIGHT, WIDTH * 2, self.img_format))
-    #       if SHOW_FPS:
-    #         f += 1
-    #         if f % 10 == 0:
-    #           fps = 10 / (time.perf_counter() - t)
-    #           t = time.perf_counter()
-    #         print("FRAME %d  |  FPS %.3f\r" % (f, fps), end='')
-    #     if self._stop:
-    #       log.debug('Stopping framebuffer worker')
-    #       break
-    # except Lz4FramedNoDataError:
-    #   e = rmerr.read().decode('ascii')
-    #   s = rmstream.channel.recv_exit_status()
-    #   if s == 127:
-    #     log.info("Check if your remarkable has lz4 installed! %s", e)
-    #     self.signals.onFatalError.emit(Exception(e))
-    #   else:
-    #     log.warning("Frame data stream is empty.\nExit status: %d %s", s, e)
-
-    # except Exception as e:
-    #   log.error("Error: %s %s", type(e), e)
-    #   self.signals.onFatalError.emit(e)
-
 
 
 class PWSignals(QObject):

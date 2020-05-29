@@ -71,9 +71,10 @@ class rMConnect(QRunnable):
       log.info('Connecting...') # pkey=key,
       self.client.connect(self.address, **self.options)
       log.info("Connected to {}".format(self.address))
+      self.client.hostname = self.address
       self.signals.onConnect.emit(self.client)
     except Exception as e:
-      log.error("Could not connect to %s: %s", self.options.get('address'), e)
+      log.error("Could not connect to %s: %s", self.address, e)
       log.info("Please check your remarkable is connected and retry.")
       self.signals.onError.emit(e)
     log.debug('Stopping connection worker')
