@@ -11,7 +11,6 @@ import time
 import sys
 import os
 import logging
-log = logging.getLogger('rmview')
 
 
 from twisted.internet.protocol import Protocol
@@ -20,9 +19,13 @@ from twisted.application import internet, service
 
 from rfb import *
 
-IMG_FORMAT = QImage.Format_Grayscale16
+try:
+  IMG_FORMAT = QImage.Format_Grayscale16
+except Exception:
+  IMG_FORMAT = QImage.Format_RGB16
 BYTES_PER_PIXEL = 2
 
+log = logging.getLogger('rmview')
 
 class FBWSignals(QObject):
   onFatalError = pyqtSignal(Exception)
@@ -188,7 +191,7 @@ class PointerWorker(QRunnable):
       except struct.error:
         return
       except Exception as e:
-        # log.error('Error in pointer worker: %s %s', type(e), e)
+        log.error('Error in pointer worker: %s %s', type(e), e)
         return
 
       # decoding adapted from remarkable_mouse
@@ -209,12 +212,12 @@ class PointerWorker(QRunnable):
         if e_code == e_code_stylus_pressure:
           if e_value > self.threshold:
             if state == LIFTED:
-              # log.debug('PRESS')
+              log.debug('PRESS')
               state = PRESSED
               self.signals.onPenPress.emit()
           else:
             if state == PRESSED:
-              # log.debug('RELEASE')
+              log.debug('RELEASE')
               state = LIFTED
               self.signals.onPenLift.emit()
 
