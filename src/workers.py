@@ -45,6 +45,8 @@ class RFBTest(RFBClient):
       RAW_ENCODING ])
     self.framebufferUpdateRequest()
 
+  def sendPassword(self, password):
+    self.signals.onFatalError.emit(Exception("Unsupported password request."))
 
   def commitUpdate(self, rectangles=None):
     self.signals.onNewFrame.emit(self.img)
@@ -69,11 +71,11 @@ class RFBTestFactory(RFBFactory):
     self.signals = signals
 
   def clientConnectionLost(self, connector, reason):
-    print(reason)
-    # connector.connect()
+    log.warning("Connection lost: %s", reason.getErrorMessage())
+    connector.connect()
 
   def clientConnectionFailed(self, connector, reason):
-    print("connection failed:", reason)
+    self.signals.onFatalError.emit(Exception("Connection failed: " + str(reason)))
     reactor.callFromThread(reactor.stop)
 
 
@@ -102,14 +104,16 @@ class FrameBufferWorker(QRunnable):
 
   @pyqtSlot()
   def run(self):
-    _,out,_ = self.ssh.exec_command("insmod mxc_epdc_fb_damage.ko")
-    out.channel.recv_exit_status()
-    _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
-    print(next(out))
-    self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBTestFactory(self.signals))
-    self.vncClient.startService()
-    reactor.run(installSignalHandlers=0)
-
+    try:
+      _,out,_ = self.ssh.exec_command("insmod mxc_epdc_fb_damage.ko")
+      out.channel.recv_exit_status()
+      _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
+      print(next(out))
+      self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBTestFactory(self.signals))
+      self.vncClient.startService()
+      reactor.run(installSignalHandlers=0)
+    except Exception as e:
+      self.signals.onFatalError.emit(e)
 
 class PWSignals(QObject):
   onFatalError = pyqtSignal(Exception)
