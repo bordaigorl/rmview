@@ -254,6 +254,8 @@ class RFBClient(Protocol):
 
     def sendPassword(self, password):
         """send password"""
+        # Disabled to remove dependency from pyDes since rM-vnc-server does
+        # not require passwords
         raise Exception("Password not supported")
         # pw = (password + '\0' * 8)[:8]
         # des = RFBDes(pw)
@@ -553,11 +555,12 @@ class RFBClient(Protocol):
         it = iter(data)
 
         def cpixel(i):
-            yield next(i)
-            yield next(i)
-            yield next(i)
+            for j in range(self.bypp):
+                yield next(i)
+            # yield next(i)
+            # yield next(i)
             # Alpha channel
-            yield 0xff
+            # yield 0xff
 
         while True:
             try:
