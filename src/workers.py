@@ -35,7 +35,7 @@ class FBWSignals(QObject):
 
 class RFBTest(RFBClient):
   img = QImage(WIDTH, HEIGHT, GRAY16)
-  # bla = 0
+  painter = QPainter(img)
 
   def vncConnectionMade(self):
     self.signals = self.factory.signals
@@ -47,19 +47,12 @@ class RFBTest(RFBClient):
     self.framebufferUpdateRequest(incremental=1)
 
   def updateRectangle(self, x, y, width, height, data):
-    # print("RECT: ", x, y, width, height, data[:20])
-    # c = qRgb(self.bla,self.bla,self.bla)
-    # self.bla += 5
-    # print(width, WIDTH , height, HEIGHT, (width == WIDTH) and (height == HEIGHT))
     if (width == WIDTH) and (height == HEIGHT):
-      print("bulk")
+      self.painter.end()
       self.img = QImage(data, WIDTH, HEIGHT, WIDTH * 2, GRAY16)
+      self.painter = QPainter(self.img)
     else:
-      for a in range(width):
-        for b in range(height):
-          # print(a,b,data[:10])
-          c = data[2*(a+(b*width))] + data[2*(a+(b*width))+1]
-          self.img.setPixel(x+a,y+b,qRgb(c,c,c)) # data[a+(b*width)]
+      self.painter.drawImage(x,y,QImage(data, width, height, width * 2, GRAY16))
 
 
 
