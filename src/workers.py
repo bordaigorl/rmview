@@ -95,20 +95,23 @@ class FrameBufferWorker(QRunnable):
     self.ssh = ssh
     self.img_format = img_format
 
-    host = "192.168.1.111"
-    port = 5900
     self.signals = FBWSignals()
-    self.vncClient = internet.TCPClient(host, port, RFBTestFactory(self.signals))
 
   def stop(self):
     from twisted.internet import reactor
     print("Stopping")
     reactor.callFromThread(reactor.stop)
+    self.ssh.exec_command("killall rM-vnc-server")
     print("Stopped")
     self._stop = True
 
   @pyqtSlot()
   def run(self):
+    _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
+    for line in out:
+      print("STARTED", line)
+      break
+    self.vncClient = internet.TCPClient("192.168.1.111", 5900, RFBTestFactory(self.signals))
     from twisted.internet import reactor
     self.vncClient.startService()
     reactor.run(installSignalHandlers=0)
