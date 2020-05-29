@@ -31,47 +31,6 @@ class FBWSignals(QObject):
   onFatalError = pyqtSignal(Exception)
   onNewFrame = pyqtSignal(QImage)
 
-def _zrle_next_bit(it, pixels_in_tile):
-    num_pixels = 0
-    while True:
-        b = ord(next(it))
-
-        for n in range(8):
-            value = b >> (7 - n)
-            yield value & 1
-
-            num_pixels += 1
-            if num_pixels == pixels_in_tile:
-                return
-
-
-def _zrle_next_dibit(it, pixels_in_tile):
-    num_pixels = 0
-    while True:
-        b = ord(next(it))
-
-        for n in range(0, 8, 2):
-            value = b >> (6 - n)
-            yield value & 3
-
-            num_pixels += 1
-            if num_pixels == pixels_in_tile:
-                return
-
-
-def _zrle_next_nibble(it, pixels_in_tile):
-    num_pixels = 0
-    while True:
-        b = ord(next(it))
-
-        for n in range(0, 8, 4):
-            value = b >> (4 - n)
-            yield value & 15
-
-            num_pixels += 1
-            if num_pixels == pixels_in_tile:
-                return
-
 
 class RFBTest(RFBClient):
   img = QImage(WIDTH, HEIGHT, IMG_FORMAT)
