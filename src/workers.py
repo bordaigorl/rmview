@@ -85,11 +85,6 @@ class FrameBufferWorker(QRunnable):
 
   def __init__(self, ssh, delay=None, lz4_path=None, img_format=IMG_FORMAT):
     super(FrameBufferWorker, self).__init__()
-    self._read_loop = """\
-      while dd if=/dev/fb0 count=1 bs={bytes} 2>/dev/null; do {delay}; done | {lz4_path}\
-    """.format(bytes=TOTAL_BYTES,
-               delay="sleep "+str(delay) if delay else "true",
-               lz4_path=lz4_path or "$HOME/lz4")
     self.ssh = ssh
     self.img_format = img_format
 
