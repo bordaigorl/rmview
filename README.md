@@ -39,7 +39,7 @@ The supported configuration settings are:
     // alternatively to key, "password": "****" is supported
     "timeout": 1 // in seconds
   },
-  "orientation": "portrait", // default: landscape
+  "orientation": "portrait", // auto for auto-detect, default: landscape
   "pen_size": 10, // set to 0 to disable
   "pen_color": "red",
   "background_color": "black", // default: white
