@@ -65,11 +65,17 @@ class rMViewApp(QApplication):
     self.viewer.menu.addAction(act)
     self.viewer.setWindowTitle("rMview")
     self.viewer.show()
-    if self.config.get('orientation', 'landscape') == 'landscape':
+
+    self.orient = None
+    orient = self.config.get('orientation', 'landscape')
+    if orient == 'landscape':
       self.viewer.rotateCW()
       self.autoResize(WIDTH / HEIGHT)
-    else:
+    elif orient == 'portrait':
       self.autoResize(HEIGHT / WIDTH)
+    else: # orient
+      self.autoResize(HEIGHT / WIDTH)
+      self.orient = True
 
     # bar = QMenuBar()
     # menu = bar.addMenu('&View')
@@ -93,6 +99,25 @@ class rMViewApp(QApplication):
     self.aboutToQuit.connect(self.joinWorkers)
     self.requestConnect()
 
+  def detectOrientation(self, image):
+    c = image.pixel
+    portrait = False
+    # print(c(48, 47) , c(72, 72) , c(55, 55) , c(64, 65))
+    if c(48, 47) == 4278190080 and  c(72, 72) == 4278190080 and \
+       (c(55, 55) == 4294967295 or c(64, 65) == 4294967295):
+       if c(61, 1812) != 4278190080 or c(5,5) == 4278190080:
+         portrait = True
+    elif c(1356, 47) == 4278190080 and c(1329, 72) == 4278190080 and \
+       (c(1348, 54) == 4294967295 or c(1336, 65) == 4294967295):
+      portrait = True
+    elif c(5,5) == 4278190080:
+      portrait = True
+    if portrait:
+       self.viewer.portrait()
+       self.autoResize(HEIGHT / WIDTH)
+    else:
+       self.viewer.landscape()
+       self.autoResize(WIDTH / HEIGHT)
 
   def autoResize(self, ratio):
     dg = self.desktop().availableGeometry(self.viewer)
@@ -144,7 +169,7 @@ class rMViewApp(QApplication):
     self.ssh = ssh
     self.viewer.setWindowTitle("rMview - " + self.config.get('ssh').get('address'))
     self.fbworker = FrameBufferWorker(ssh, delay=self.config.get('fetch_frame_delay'))
-    self.fbworker.signals.onNewFrame.connect(lambda image: self.viewer.setImage(image))
+    self.fbworker.signals.onNewFrame.connect(self.onNewFrame)
     self.fbworker.signals.onFatalError.connect(self.frameError)
     self.threadpool.start(self.fbworker)
 
@@ -161,6 +186,13 @@ class rMViewApp(QApplication):
     self.penworker.signals.onPenNear.connect(self.pen.show)
     self.penworker.signals.onPenFar.connect(self.pen.hide)
 
+
+  @pyqtSlot(QImage)
+  def onNewFrame(self, image):
+    if self.orient:
+      self.detectOrientation(image)
+      self.orient = False
+    self.viewer.setImage(image)
 
   @pyqtSlot(int, int)
   def movePen(self, x, y):
