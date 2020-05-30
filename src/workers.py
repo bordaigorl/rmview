@@ -53,12 +53,7 @@ class RFBTest(RFBClient):
     self.framebufferUpdateRequest(incremental=1)
 
   def updateRectangle(self, x, y, width, height, data):
-    if (width == WIDTH) and (height == HEIGHT):
-      self.painter.end()
-      self.img = QImage(data, WIDTH, HEIGHT, WIDTH * BYTES_PER_PIXEL, IMG_FORMAT)
-      self.painter = QPainter(self.img)
-    else:
-      self.painter.drawImage(x,y,QImage(data, width, height, width * BYTES_PER_PIXEL, IMG_FORMAT))
+    self.painter.drawImage(x,y,QImage(data, width, height, width * BYTES_PER_PIXEL, IMG_FORMAT))
 
 
 
