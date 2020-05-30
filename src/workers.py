@@ -96,19 +96,19 @@ class FrameBufferWorker(QRunnable):
     self.signals = FBWSignals()
 
   def stop(self):
-    print("Stopping")
+    log.info("Stopping framebuffer thread...")
     reactor.callFromThread(reactor.stop)
     self.ssh.exec_command("killall rM-vnc-server")
-    print("Stopped")
+    log.info("Framebuffer thread stopped")
     self._stop = True
 
   @pyqtSlot()
   def run(self):
     try:
       _,out,_ = self.ssh.exec_command("/sbin/insmod $HOME/mxc_epdc_fb_damage.ko")
-      out.channel.recv_exit_status()
+      log.debug("Insmod returned %d", out.channel.recv_exit_status())
       _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
-      print(next(out))
+      log.info(next(out))
       self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBTestFactory(self.signals))
       self.vncClient.startService()
       reactor.run(installSignalHandlers=0)
