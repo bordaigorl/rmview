@@ -30,6 +30,7 @@ class rMViewApp(QApplication):
 
   pen = None
   pen_size = 15
+  trail = None  # None: disabled, False: inactive, True: active
 
   def __init__(self, args):
     super(rMViewApp, self).__init__(args)
@@ -52,7 +53,9 @@ class rMViewApp(QApplication):
         log.debug("Configuration failure in %s: %s" % (f, e))
     self.config.setdefault('ssh', {})
     self.pen_size = self.config.get('pen_size', self.pen_size)
-
+    self.trailPen = QPen(QColor(self.config.get('pen_color', 'red')), max(1, self.pen_size // 3))
+    self.trailDelay = self.config.get('pen_trail', 200)
+    self.trail = None if self.trailDelay == 0 else False
 
     self.setWindowIcon(QIcon(':/assets/rmview.svg'))
 
@@ -181,10 +184,10 @@ class rMViewApp(QApplication):
     self.pen.hide()
     self.pen.setZValue(100)
     self.penworker.signals.onPenMove.connect(self.movePen)
-    self.penworker.signals.onPenLift.connect(self.pen.show)
-    self.penworker.signals.onPenPress.connect(self.pen.hide)
-    self.penworker.signals.onPenNear.connect(self.pen.show)
-    self.penworker.signals.onPenFar.connect(self.pen.hide)
+    self.penworker.signals.onPenLift.connect(self.showPen)
+    self.penworker.signals.onPenPress.connect(self.hidePen)
+    self.penworker.signals.onPenNear.connect(self.showPen)
+    self.penworker.signals.onPenFar.connect(self.hidePen)
 
 
   @pyqtSlot(QImage)
@@ -194,6 +197,18 @@ class rMViewApp(QApplication):
       self.orient = False
     self.viewer.setImage(image)
 
+  @pyqtSlot()
+  def hidePen(self):
+    if self.trail is not None:
+      self.trail = False
+    self.pen.hide()
+
+  @pyqtSlot()
+  def showPen(self):
+    if self.trail is not None:
+      self.trail = False
+    self.pen.show()
+
   @pyqtSlot(int, int)
   def movePen(self, x, y):
     y = 20951 - y
@@ -201,7 +216,15 @@ class rMViewApp(QApplication):
     scaling = ratio_width if ratio_width > ratio_height else ratio_height
     x = scaling * (x - (15725 - WIDTH / scaling) / 2)
     y = scaling * (y - (20951 - HEIGHT / scaling) / 2)
-    self.pen.setRect(x,y,self.pen_size,self.pen_size)
+    if self.trail is not None:
+      if self.trail is False:
+        self.trail = True
+      elif self.pen.isVisible():
+        old = self.pen.rect().center()
+        t = self.viewer.scene.addLine(x,y,old.x(),old.y(),self.trailPen)
+        QTimer.singleShot(self.trailDelay // 2, lambda: t.setOpacity(.5))
+        QTimer.singleShot(self.trailDelay, lambda: self.viewer.scene.removeItem(t))
+    self.pen.setRect(x - (self.pen_size // 2), y - (self.pen_size // 2), self.pen_size, self.pen_size)
 
   @pyqtSlot()
   def cloneViewer(self):
