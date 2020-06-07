@@ -44,8 +44,9 @@ The supported configuration settings are:
   "pen_color": "red",
   "pen_trail": 1000, // set to 0 to disable, default: 200
   "background_color": "black", // default: white
-  "fetch_frame_delay": 0.03 // sleep 0.03s on remarkable before fetching new frame (default is no delay)
-  "lz4_path_on_remarkable": "/usr/opt/lz4" // default: $HOME/lz4
+  "fetch_frame_delay": 0.03, // sleep 0.03s on remarkable before fetching new frame (default is no delay)
+  "lz4_path_on_remarkable": "/usr/opt/lz4", // default: $HOME/lz4
+  "hide_pen_on_press": false // hides pointer when pen touches display, default: true
 }
 ```
 
