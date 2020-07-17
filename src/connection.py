@@ -23,7 +23,7 @@ class rMConnect(QRunnable):
 
   _exception = None
 
-  def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=1, onConnect=None, onError=None):
+  def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=1, onConnect=None, onError=None, insecure_auto_add_host=False, **kwargs):
     super(rMConnect, self).__init__()
     self.address = address
     self.signals = rMConnectSignals()
@@ -34,7 +34,10 @@ class rMConnect(QRunnable):
     # self.key = key
     try:
       self.client = paramiko.SSHClient()
-      self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+      if insecure_auto_add_host:
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+      else:
+        self.client.load_system_host_keys()
 
       if key is not None:
         key = os.path.expanduser(key)
