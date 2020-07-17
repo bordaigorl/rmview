@@ -54,6 +54,8 @@ class rMViewApp(QApplication):
     self.config.setdefault('ssh', {})
     self.pen_size = self.config.get('pen_size', self.pen_size)
     self.trailPen = QPen(QColor(self.config.get('pen_color', 'red')), max(1, self.pen_size // 3))
+    self.trailPen.setCapStyle(Qt.RoundCap)
+    self.trailPen.setJoinStyle(Qt.RoundJoin)
     self.trailDelay = self.config.get('pen_trail', 200)
     self.trail = None if self.trailDelay == 0 else False
 
