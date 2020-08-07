@@ -262,9 +262,12 @@ class rMViewApp(QApplication):
     QMessageBox.critical(self.viewer, "Error", 'Please check your reMarkable is properly configured, see the documentation for instructions.\n\n%s' % e)
     self.quit()
 
-if __name__ == '__main__':
+def rmViewMain():
   log.setLevel(logging.INFO)
   QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
   ecode = rMViewApp(sys.argv).exec_()
   print('\nBye!')
   sys.exit(ecode)
+
+if __name__ == '__main__':
+  rmViewMain()
