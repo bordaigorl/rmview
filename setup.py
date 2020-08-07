@@ -10,7 +10,7 @@ def genResources():
     from PyQt5.pyrcc_main import main as pyrcc_main
     saved_argv = sys.argv
     # Use current environment to find pyrcc but use the public interface
-    sys.argv = ['pyrcc5', '-o', 'src/resources.py', 'resources.qrc']
+    sys.argv = ['pyrcc5', '-o', 'src/rmview/resources.py', 'resources.qrc']
     pyrcc_main()
     sys.argv = saved_argv
 
