@@ -2,7 +2,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-from rmparams import *
+from .rmparams import *
 
 import paramiko
 import struct
@@ -17,7 +17,7 @@ from twisted.internet.protocol import Protocol
 from twisted.internet import protocol, reactor
 from twisted.application import internet, service
 
-from rfb import *
+from .rfb import *
 
 try:
   IMG_FORMAT = QImage.Format_Grayscale16
