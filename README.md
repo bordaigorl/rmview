@@ -112,6 +112,7 @@ I took inspiration from the following projects:
 
 Icons adapted from designs by Freepik, xnimrodx from www.flaticon.com
 
+Thanks to @adem amd @ChrisPattison for their [PRs](https://github.com/bordaigorl/rmview/issues?q=is%3Apr+is%3Aclosed).
 
 ## Disclaimer
 
