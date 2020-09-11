@@ -1,6 +1,6 @@
 # rMview: a fast live viewer for reMarkable
 
-[![Demo](https://raw.githubusercontent.com/bordaigorl/rmview/master/screenshot.png)][demo]
+[![Demo](https://raw.githubusercontent.com/bordaigorl/rmview/vnc/screenshot.png)][demo]
 
 
 ## Features
