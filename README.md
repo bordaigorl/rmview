@@ -1,32 +1,57 @@
 # rMview: a fast live viewer for reMarkable
 
-![screenshot](https://raw.githubusercontent.com/bordaigorl/rmview/master/screenshot.png)
+[![Demo](https://raw.githubusercontent.com/bordaigorl/rmview/master/screenshot.png)][demo]
 
-## Choose your flavour
 
-There are two versions of rMview, presenting the same interface but using different back-ends (thus requiring different setups on the reMarkable):
+## Features
 
-* The "reStreamer-like" version, in the `master` branch
-* The "VNC-based" version, in the `vnc` branch
+* Demo [:rocket: here][demo]
+* Fast streaming of reMarkable's screen to a window in your computer
+* UI for zooming, panning, rotating
+* Pen tracking: a pointer follows the position of the pen when hovering on the reMarkable
+* Clone a frame into separate window for reference
+* Save screenshot as PNG
 
-In my tests, the VNC version is a clear winner, but it has different requirements, so I am keeping both alive for the moment.
+> :loudspeaker: **Volunteers needed**: if you have experience with producing binary bundles with pyQt, and feel like contributing to the project, drop me a line!
 
-**Volunteers wanted**: if you have experience with build systems/packaging for python, and/or experience in producing bundles with pyQt, and feel like contributing to the project, drop me a line!
 
-## Instructions
+## Installation
 
-To run the program you need python with pyqt5 installed.
-Before running the program the first time, generate the resource file with
+1. You will need [Python3][py3].
 
-    pyrcc5 -o src/resources.py resources.qrc 
+   > :warning: Please make sure `pip` is pointing to the Python3 version if your system has Python2 as well.
+   If not, use `pip3` instead of `pip` in what follows.
 
-Then you can invoke the program with
+2. The easiest installation method is by using pip:
 
-    python src/rmview.py [config]
+       pip install .
+
+   which will install all required dependencies and install a new `rmview` command.
+   Alternatively you may want to install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted]) with `pip` manually.
+
+
+3. On the reMarkable itself you need to install [rM-vnc-server][vnc] and its dependency [mxc_epdc_fb_damage](https://github.com/peter-sa/mxc_epdc_fb_damage).
+   Instructions can be found in the [wiki](https://github.com/bordaigorl/rmview/wiki/How-to-run-the-VNC-based-version).
+   This last step will be automated in the near future.
+
+To run the tool after installation just run `rmview` from a console.
+
+> :warning: **WARNING** :warning::
+> If you use [Anaconda][anaconda], please install the dependencies via `conda` (and not `pip`).
+
+Tested with Python 3.8.2, PyQt 5.14.2, MacOs 10.15.4, reMarkable firmware 2.1.1.3.
+
+## Usage and configuration
+
+You can invoke the program with
+
+    rmview [config]
 
 the optional `config` parameter is the filename of a json configuration file.
 If the parameter is not found, the program will look for a `rmview.json` file in the current directory, or, if not found, for the path stored in the environment variable `RMVIEW_CONF`.
 If none are found, or if the configuration is underspecified, the tool is going to prompt for address/password.
+
+### Configuration files
 
 The supported configuration settings are below.
 Look in file `example.json` for an example configuration.
@@ -37,10 +62,10 @@ All the settings are optional.
 | `ssh`                    | Connection parameters (see below)                       | `{}`          |
 | `orientation`            | `"landscape"`, `"portrait"`, `"auto"`                   | `"landscape"` |
 | `pen_size`               | diameter of pointer in px                               | `15`          |
-| `pen_color`              | color of pointer or trail                               | `"red"`       |
+| `pen_color`              | color of pointer and trail                              | `"red"`       |
 | `pen_trail`              | persistence of trail in ms                              | `200`         |
 | `background_color`       | color of window                                         | `"white"`     |
-| `hide_pen_on_press`      | bool                                                    | `true`        |
+| `hide_pen_on_press`      | if true, the pointer is hidden while writing            | `true`        |
 
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
@@ -50,45 +75,29 @@ Connection parameters are provided as a dictionary with the following keys (all 
 | `address`   | IP of remarkable                       | tool prompts for it if missing  |
 | `username`  | username for ssh access on reMarkable  | default: `"root"`               |
 | `key`       | Local path to key for ssh              | not needed if password provided |
-| `password`  | Password provide by reMarkable         | not needed if key provided      |
+| `password`  | Password provided by reMarkable        | not needed if key provided      |
 | `timeout`   | connection timeout in seconds          | default: 1                      |
 
-
-Tested with Python 3.8.2, PyQt 5.14.2, MacOs 10.15.4, reMarkable firmware 2.1.1.3
-
-## Requirements
-
-### On your computer:
-
-- Python 3
-- PyQt5
-- Paramiko
-- lz4framed for `master` branch
-- Twisted for `vnc` branch
-
-They can be installed via `pip install pyqt5 paramiko py-lz4framed`.
-If you use Anaconda, please install the dependencies via `conda` (and not `pip`).
-
-### On the reMarkable:
-
-*"reStreamer-like" version:*
-
-- LZ4, installed by running `scp lz4.arm.static <REMARKABLE>:lz4`.
-  Make sure `lz4` is executable by running `ssh <REMARKABLE> chmod +x lz4`.
-
-*"VNC-based" version:*
-
-- Install [rM-vnc-server][vnc] and its dependency [mxc_epdc_fb_damage](https://github.com/peter-sa/mxc_epdc_fb_damage). Instructions can be found in the [wiki](https://github.com/bordaigorl/rmview/wiki/How-to-run-the-VNC-based-version).
 
 ## To Do
 
  - [ ] Settings dialog
  - [ ] About dialog
  - [ ] Pause stream of screen/pen
- - [ ] Build system
- - [ ] Bundle
+ - [ ] Binary bundles for Window, Linux and MacOs (PyInstaller?)
  - [ ] Add interaction for Lamy button? (1 331 1 down, 1 331 0 up)
  - [ ] Remove dependency to Twisted in `vnc` branch
+
+
+## Legacy reStreamer-like version
+
+There are two versions of rMview, presenting the same interface but using different back-ends (thus requiring different setups on the reMarkable):
+
+* The "VNC-based" version, in the [`vnc` branch][vnc-branch] (default)
+* The "reStreamer-like" version, in the [`ssh` branch][ssh-branch]
+
+In my tests, the VNC version is a clear winner.
+The `ssh` branch of this repo hosts the reStreamer-like version for those who prefer it, but I am not planning to update it.
 
 
 ## Credits
@@ -114,3 +123,12 @@ This project is not affiliated to, nor endorsed by, [reMarkable AS](https://rema
 GPLv3
 
 [vnc]: https://github.com/peter-sa/rM-vnc-server
+[demo]: https://www.reddit.com/r/RemarkableTablet/comments/gtjrqt/rmview_now_with_support_for_vnc/
+[ssh-branch]: https://github.com/bordaigorl/rmview/tree/ssh
+[vnc-branch]: https://github.com/bordaigorl/rmview/tree/vnc
+
+[py3]: https://www.python.org/downloads/
+[anaconda]: https://docs.anaconda.com/anaconda
+[pyqt5]: https://www.riverbankcomputing.com/software/pyqt/
+[paramiko]: http://www.paramiko.org/
+[twisted]: https://twistedmatrix.com/trac/
