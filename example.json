@@ -1,0 +1,15 @@
+{
+  "ssh": {
+    "address": "10.11.99.1",
+    "username": "root",
+    "key": "~/.ssh/id_rsa",
+    "timeout": 2
+  },
+  "orientation": "auto",
+  "pen_size": 10,
+  "pen_color": "red",
+  "pen_trail": 1000,
+  "background_color": "black",
+  "fetch_frame_delay": 0.03,
+  "hide_pen_on_press": false
+}

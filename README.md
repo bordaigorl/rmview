@@ -28,27 +28,33 @@ the optional `config` parameter is the filename of a json configuration file.
 If the parameter is not found, the program will look for a `rmview.json` file in the current directory, or, if not found, for the path stored in the environment variable `RMVIEW_CONF`.
 If none are found, or if the configuration is underspecified, the tool is going to prompt for address/password.
 
-The supported configuration settings are:
+The supported configuration settings are below.
+Look in file `example.json` for an example configuration.
+All the settings are optional.
 
-```js
-{ // all settings are optional, comments not allowed
-  "ssh": {
-    "address": "10.11.99.1", // works over WiFi too!
-    "username": "root",
-    "key": "~/.ssh/id_rsa_remarkable",
-    // alternatively to key, "password": "****" is supported
-    "timeout": 1 // in seconds
-  },
-  "orientation": "portrait", // auto for auto-detect, default: landscape
-  "pen_size": 10, // set to 0 to disable
-  "pen_color": "red",
-  "pen_trail": 1000, // set to 0 to disable, default: 200
-  "background_color": "black", // default: white
-  "fetch_frame_delay": 0.03, // sleep 0.03s on remarkable before fetching new frame (default is no delay)
-  "lz4_path_on_remarkable": "/usr/opt/lz4", // default: $HOME/lz4
-  "hide_pen_on_press": false // hides pointer when pen touches display, default: true
-}
-```
+| Setting key              | Values                                                  | Default       |
+| ------------------------ | ------------------------------------------------------- | ------------- |
+| `ssh`                    | Connection parameters (see below)                       | `{}`          |
+| `orientation`            | `"landscape"`, `"portrait"`, `"auto"`                   | `"landscape"` |
+| `pen_size`               | diameter of pointer in px                               | `15`          |
+| `pen_color`              | color of pointer or trail                               | `"red"`       |
+| `pen_trail`              | persistence of trail in ms                              | `200`         |
+| `background_color`       | color of window                                         | `"white"`     |
+| `fetch_frame_delay`      | delay in sec after each frame fetch to throttle refresh | `0`           |
+| `lz4_path_on_remarkable` | absolute path on the reMarkable                         | `"$HOME/lz4"` |
+| `hide_pen_on_press`      | bool                                                    | `true`        |
+
+
+Connection parameters are provided as a dictionary with the following keys (all optional):
+
+| Parameter   | Values                                 | Comments                        |
+| ----------- | -------------------------------------- | ------------------------------- |
+| `address`   | IP of remarkable                       | tool prompts for it if missing  |
+| `username`  | username for ssh access on reMarkable  | default: `"root"`               |
+| `key`       | Local path to key for ssh              | not needed if password provided |
+| `password`  | Password provide by reMarkable         | not needed if key provided      |
+| `timeout`   | connection timeout in seconds          | default: 1                      |
+
 
 Tested with Python 3.8.2, PyQt 5.14.2, MacOs 10.15.4, reMarkable firmware 2.1.1.3
 
