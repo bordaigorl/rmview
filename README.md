@@ -40,8 +40,6 @@ All the settings are optional.
 | `pen_color`              | color of pointer or trail                               | `"red"`       |
 | `pen_trail`              | persistence of trail in ms                              | `200`         |
 | `background_color`       | color of window                                         | `"white"`     |
-| `fetch_frame_delay`      | delay in sec after each frame fetch to throttle refresh | `0`           |
-| `lz4_path_on_remarkable` | absolute path on the reMarkable                         | `"$HOME/lz4"` |
 | `hide_pen_on_press`      | bool                                                    | `true`        |
 
 

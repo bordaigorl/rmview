@@ -10,6 +10,5 @@
   "pen_color": "red",
   "pen_trail": 1000,
   "background_color": "black",
-  "fetch_frame_delay": 0.03,
   "hide_pen_on_press": false
 }
