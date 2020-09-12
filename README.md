@@ -14,10 +14,15 @@
 
 > :loudspeaker: **Volunteers needed**: if you have experience with producing binary bundles with pyQt, and feel like contributing to the project, drop me a line!
 
+> :warning: **WARNING** :warning::
+> rMview has only been tested with reMarkable 1.
+> Support for reMarkable 2 may come once it gets wider diffusion.
+> The [ssh branch][ssh-branch] should be compatible with the reMarkable 2.
+
 
 ## Installation
 
-1. You will need [Python3][py3].
+1. You will need [Python3][py3] on your computer.
 
    > :warning: Please make sure `pip` is pointing to the Python3 version if your system has Python2 as well.
    If not, use `pip3` instead of `pip` in what follows.
