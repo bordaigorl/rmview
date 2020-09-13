@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 from .rmparams import *
+from .installparams import *
 
 import paramiko
 import struct
@@ -92,9 +93,42 @@ class FrameBufferWorker(QRunnable):
     log.info("Framebuffer thread stopped")
     self._stop = True
 
+  def _downloadAndCheckFile(self, url, filename, sha1sum, executable = False):
+    _,_,out = self.ssh.exec_command("wget " + url + " -O " + filename)
+    log.debug("wget returned %d", out.channel.recv_exit_status())
+
+    _,out,_ = self.ssh.exec_command("sha1sum " + filename)
+    log.debug("sha1sum returned %d", out.channel.recv_exit_status())
+    sha1sum_out = out.read().decode("utf-8")
+
+    if sha1sum_out[:40] != sha1sum:
+      error_msg = "Mismatched SHA1 sum in download from " + url
+      # Delete the file so a second run won't pass
+      _,_,out = self.ssh.exec_command("rm " + filename)
+      log.debug("rm returned %d", out.channel.recv_exit_status())
+      # TODO: Download to a temporary and move instead of deleting
+      raise RuntimeError(error_msg)
+
+    if executable:
+      _,_,out = self.ssh.exec_command("chmod 0755 " + filename)
+      log.debug("chmod returned %d", out.channel.recv_exit_status())
+
   @pyqtSlot()
   def run(self):
     try:
+      
+      _,out,_ = self.ssh.exec_command("ls -1")
+      file_list = out.read().decode("utf-8").split("\n")
+      if not "mxc_epdc_fb_damage.ko" in file_list:
+        log.info("mxc_epdc_fb_damage.ko not found. Downloading...")
+        self._downloadAndCheckFile(kernel_mod_url, 'mxc_epdc_fb_damage.ko', kernel_mod_hash)
+
+      if not "rM-vnc-server" in file_list:
+        log.info("rM-vnc-server not found. Downloading...")
+        self._downloadAndCheckFile(vncserver_url, 'rM-vnc-server', vncserver_hash, executable=True)
+        
+      # Should we always checksum this kernel module before attempting to load?
+      # An incomplete wget will leave some partial file around
       _,out,_ = self.ssh.exec_command("/sbin/insmod $HOME/mxc_epdc_fb_damage.ko")
       log.debug("Insmod returned %d", out.channel.recv_exit_status())
       _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
