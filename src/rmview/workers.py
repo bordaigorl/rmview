@@ -129,6 +129,14 @@ class FrameBufferWorker(QRunnable):
         
       # Should we always checksum this kernel module before attempting to load?
       # An incomplete wget will leave some partial file around
+      _,out,_ = self.ssh.exec_command("cat /proc/cpuinfo")
+      log.debug("Cat returned %d", out.channel.recv_exit_status())
+      cpuinfo = out.read().decode("utf-8").split("\n")[10]
+
+      # Make sure this is a Remarkable V1 before attempting to load the kernel module
+      if not 'Freescale i.MX6 SoloLite' in cpuinfo:
+        raise RuntimeError("Unexpected processor. Is this a Remarkable v1?")
+
       _,out,_ = self.ssh.exec_command("/sbin/insmod $HOME/mxc_epdc_fb_damage.ko")
       log.debug("Insmod returned %d", out.channel.recv_exit_status())
       _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
