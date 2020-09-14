@@ -173,7 +173,11 @@ class rMViewApp(QApplication):
   def connected(self, ssh):
     self.ssh = ssh
     self.viewer.setWindowTitle("rMview - " + self.config.get('ssh').get('address'))
-    self.fbworker = FrameBufferWorker(ssh, delay=self.config.get('fetch_frame_delay'))
+    self.fbworker = FrameBufferWorker(ssh,
+      auto_install=self.config.get('auto_install'),
+      bypass_kmod_checksum=self.config.get('bypass_kmod_checksum'),
+      delay=self.config.get('fetch_frame_delay'),
+      )
     self.fbworker.signals.onNewFrame.connect(self.onNewFrame)
     self.fbworker.signals.onFatalError.connect(self.frameError)
     self.threadpool.start(self.fbworker)

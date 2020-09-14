@@ -79,12 +79,15 @@ class FrameBufferWorker(QRunnable):
 
   _stop = False
 
-  def __init__(self, ssh, delay=None, lz4_path=None, img_format=IMG_FORMAT):
+  def __init__(self, ssh, auto_install=None, bypass_kmod_checksum=None, delay=None, lz4_path=None, img_format=IMG_FORMAT):
     super(FrameBufferWorker, self).__init__()
     self.ssh = ssh
     self.img_format = img_format
 
     self.signals = FBWSignals()
+
+    self.auto_install = auto_install
+    self.bypass_kmod_checksum = bypass_kmod_checksum
 
   def stop(self):
     log.info("Stopping framebuffer thread...")
@@ -93,15 +96,17 @@ class FrameBufferWorker(QRunnable):
     log.info("Framebuffer thread stopped")
     self._stop = True
 
+  def _checksumFile(self, filename, sha1sum):
+    _,out,_ = self.ssh.exec_command("sha1sum " + filename)
+    log.debug("sha1sum returned %d", out.channel.recv_exit_status())
+    sha1sum_out = out.read().decode("utf-8")
+    return sha1sum_out[:40] == sha1sum
+
   def _downloadAndCheckFile(self, url, filename, sha1sum, executable = False):
     _,_,out = self.ssh.exec_command("wget " + url + " -O " + filename)
     log.debug("wget returned %d", out.channel.recv_exit_status())
 
-    _,out,_ = self.ssh.exec_command("sha1sum " + filename)
-    log.debug("sha1sum returned %d", out.channel.recv_exit_status())
-    sha1sum_out = out.read().decode("utf-8")
-
-    if sha1sum_out[:40] != sha1sum:
+    if not self._checksumFile(filename, sha1sum):
       error_msg = "Mismatched SHA1 sum in download from " + url
       # Delete the file so a second run won't pass
       _,_,out = self.ssh.exec_command("rm " + filename)
@@ -116,19 +121,23 @@ class FrameBufferWorker(QRunnable):
   @pyqtSlot()
   def run(self):
     try:
-      
+
       _,out,_ = self.ssh.exec_command("ls -1")
       file_list = out.read().decode("utf-8").split("\n")
       if not "mxc_epdc_fb_damage.ko" in file_list:
-        log.info("mxc_epdc_fb_damage.ko not found. Downloading...")
-        self._downloadAndCheckFile(kernel_mod_url, 'mxc_epdc_fb_damage.ko', kernel_mod_hash)
+        if self.auto_install is True:
+          log.info("mxc_epdc_fb_damage.ko not found. Downloading...")
+          self._downloadAndCheckFile(kernel_mod_url, 'mxc_epdc_fb_damage.ko', kernel_mod_hash)
+        else:
+          raise RuntimeError("mxc_epdc_fb_damage.ko not found. You can automatically download it with auto_install")
 
       if not "rM-vnc-server" in file_list:
-        log.info("rM-vnc-server not found. Downloading...")
-        self._downloadAndCheckFile(vncserver_url, 'rM-vnc-server', vncserver_hash, executable=True)
+        if self.auto_install is True:
+          log.info("rM-vnc-server not found. Downloading...")
+          self._downloadAndCheckFile(vncserver_url, 'rM-vnc-server', vncserver_hash, executable=True)
+        else:
+          raise RuntimeError("rM-vnc-server not found. You can automatically download it with auto_install")
         
-      # Should we always checksum this kernel module before attempting to load?
-      # An incomplete wget will leave some partial file around
       _,out,_ = self.ssh.exec_command("cat /proc/cpuinfo")
       log.debug("Cat returned %d", out.channel.recv_exit_status())
       cpuinfo = out.read().decode("utf-8").split("\n")[10]
@@ -137,6 +146,10 @@ class FrameBufferWorker(QRunnable):
       if not 'Freescale i.MX6 SoloLite' in cpuinfo:
         raise RuntimeError("Unexpected processor. Is this a Remarkable v1?")
 
+      # Check that the kernel module has the correct checksum before attempting to load
+      if not self.bypass_kmod_checksum and not self._checksumFile("mxc_epdc_fb_damage.ko", kernel_mod_hash):
+        raise RuntimeError("mxc_epdc_fb_damage.ko hash mismatch. Does the version match? You can override this error with bypass_kmod_checksum.")
+      
       _,out,_ = self.ssh.exec_command("/sbin/insmod $HOME/mxc_epdc_fb_damage.ko")
       log.debug("Insmod returned %d", out.channel.recv_exit_status())
       _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
