@@ -2,7 +2,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-from . import resources 
+from . import resources
 from .workers import FrameBufferWorker, PointerWorker
 from .connection import rMConnect
 from .viewer import QtImageViewer

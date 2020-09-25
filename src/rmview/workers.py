@@ -32,7 +32,7 @@ class FBWSignals(QObject):
   onNewFrame = pyqtSignal(QImage)
 
 
-class RFBTest(RFBClient):
+class RFB(RFBClient):
   img = QImage(WIDTH, HEIGHT, IMG_FORMAT)
   painter = QPainter(img)
 
@@ -57,12 +57,11 @@ class RFBTest(RFBClient):
 
 
 
-class RFBTestFactory(RFBFactory):
-  """test factory"""
-  protocol = RFBTest
+class RFBFactory(RFBFactory):
+  protocol = RFB
 
   def __init__(self, signals):
-    super(RFBTestFactory, self).__init__()
+    super(RFBFactory, self).__init__()
     self.signals = signals
 
   def clientConnectionLost(self, connector, reason):
@@ -99,7 +98,7 @@ class FrameBufferWorker(QRunnable):
       log.debug("Insmod returned %d", out.channel.recv_exit_status())
       _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
       log.info(next(out))
-      self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBTestFactory(self.signals))
+      self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBFactory(self.signals))
       self.vncClient.startService()
       reactor.run(installSignalHandlers=0)
     except Exception as e:
