@@ -85,11 +85,17 @@ class FrameBufferWorker(QRunnable):
     self.signals = FBWSignals()
 
   def stop(self):
+    self._stop = True
     log.info("Stopping framebuffer thread...")
     reactor.callFromThread(reactor.stop)
-    self.ssh.exec_command("killall rM-vnc-server")
+    try:
+      self.ssh.exec_command("killall rM-vnc-server", timeout=3)
+    except Exception as e:
+      log.warning("VNC could not be stopped on the reMarkable.")
+      log.warning("Although this is not a big problem, it may consume some resources until you restart the tablet.")
+      log.warning("You can manually terminate it by running `ssh %s killall rM-vnc-server`.", self.ssh.hostname)
+      log.error(e)
     log.info("Framebuffer thread stopped")
-    self._stop = True
 
   @pyqtSlot()
   def run(self):
@@ -98,11 +104,18 @@ class FrameBufferWorker(QRunnable):
       log.debug("Insmod returned %d", out.channel.recv_exit_status())
       _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
       log.info(next(out))
-      self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBFactory(self.signals))
-      self.vncClient.startService()
-      reactor.run(installSignalHandlers=0)
     except Exception as e:
       self.signals.onFatalError.emit(e)
+
+    while self._stop == False:
+      log.info("Starting VNC server")
+      try:
+        self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBFactory(self.signals))
+        self.vncClient.startService()
+        reactor.run(installSignalHandlers=0)
+      except Exception as e:
+        log.error(e)
+
 
 class PWSignals(QObject):
   onFatalError = pyqtSignal(Exception)
