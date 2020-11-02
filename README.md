@@ -62,16 +62,16 @@ The supported configuration settings are below.
 Look in file `example.json` for an example configuration.
 All the settings are optional.
 
-| Setting key              | Values                                                  | Default       |
-| ------------------------ | ------------------------------------------------------- | ------------- |
-| `ssh`                    | Connection parameters (see below)                       | `{}`          |
-| `orientation`            | `"landscape"`, `"portrait"`, `"auto"`                   | `"landscape"` |
-| `pen_size`               | diameter of pointer in px                               | `15`          |
-| `pen_color`              | color of pointer and trail                              | `"red"`       |
-| `pen_trail`              | persistence of trail in ms                              | `200`         |
-| `background_color`       | color of window                                         | `"white"`     |
-| `hide_pen_on_press`      | if true, the pointer is hidden while writing            | `true`        |
-
+| Setting key              | Values                                                                     | Default       |
+| ------------------------ | -------------------------------------------------------------------------- | ------------- |
+| `ssh`                    | Connection parameters (see below)                                          | `{}`          |
+| `orientation`            | `"landscape"`, `"portrait"`, `"auto"`                                      | `"landscape"` |
+| `pen_size`               | diameter of pointer in px                                                  | `15`          |
+| `pen_color`              | color of pointer and trail                                                 | `"red"`       |
+| `pen_trail`              | persistence of trail in ms                                                 | `200`         |
+| `background_color`       | color of window                                                            | `"white"`     |
+| `hide_pen_on_press`      | if true, the pointer is hidden while writing                               | `true`        |
+| `hide_pen_delay`	   | if > 0, the pointer is hidden if it was shown `hide_pen_delay` seconds ago | `-1`          |
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
 

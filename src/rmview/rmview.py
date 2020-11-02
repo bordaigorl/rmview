@@ -12,6 +12,7 @@ from .rmparams import *
 import sys
 import os
 import json
+import time
 
 import logging
 logging.basicConfig(format='%(message)s')
@@ -31,6 +32,9 @@ class rMViewApp(QApplication):
   pen = None
   pen_size = 15
   trail = None  # None: disabled, False: inactive, True: active
+  # Delay measured in seconds which has to pass before showing the pen trail 
+  # if < 0 the feature is disabled
+  hide_pen_delay = -1 
 
   def __init__(self, args):
     super(rMViewApp, self).__init__(args)
@@ -40,6 +44,8 @@ class rMViewApp(QApplication):
     if rmview_conf is not None:
         config_files += [rmview_conf]
     log.info("Searching configuration in " + ', '.join(config_files))
+
+    self.last_pen_pressed = time.time()
     for f in config_files:
       try:
         with open(os.path.expanduser(f)) as config_file:
@@ -53,6 +59,7 @@ class rMViewApp(QApplication):
         log.debug("Configuration failure in %s: %s" % (f, e))
     self.config.setdefault('ssh', {})
     self.pen_size = self.config.get('pen_size', self.pen_size)
+    self.hide_pen_delay = self.config.get('hide_pen_delay', self.hide_pen_delay)
     self.trailPen = QPen(QColor(self.config.get('pen_color', 'red')), max(1, self.pen_size // 3))
     self.trailPen.setCapStyle(Qt.RoundCap)
     self.trailPen.setJoinStyle(Qt.RoundJoin)
@@ -82,6 +89,7 @@ class rMViewApp(QApplication):
       self.autoResize(HEIGHT / WIDTH)
       self.orient = True
 
+    
     # bar = QMenuBar()
     # menu = bar.addMenu('&View')
     # act = QAction('Rotate clockwise', self)
@@ -188,7 +196,7 @@ class rMViewApp(QApplication):
     self.penworker.signals.onPenMove.connect(self.movePen)
     self.penworker.signals.onPenLift.connect(self.showPen)
     if self.config.get("hide_pen_on_press", True):
-        self.penworker.signals.onPenPress.connect(self.hidePen)
+        self.penworker.signals.onPenPress.connect(self.onPenPressed)
     self.penworker.signals.onPenNear.connect(self.showPen)
     self.penworker.signals.onPenFar.connect(self.hidePen)
 
@@ -210,7 +218,15 @@ class rMViewApp(QApplication):
   def showPen(self):
     if self.trail is not None:
       self.trail = False
-    self.pen.show()
+    now = time.time()
+    # Only show pen trail if pen was pressed "hide_pen_delay" at least seconds ago
+    if (now - self.last_pen_pressed > self.hide_pen_delay) or self.hide_pen_delay < 0:
+      self.pen.show()
+
+  @pyqtSlot()
+  def onPenPressed(self):
+    self.last_pen_pressed = time.time()
+    self.hidePen()
 
   @pyqtSlot(int, int)
   def movePen(self, x, y):
