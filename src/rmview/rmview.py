@@ -186,7 +186,8 @@ class rMViewApp(QApplication):
     self.pen.hide()
     self.pen.setZValue(100)
     self.penworker.signals.onPenMove.connect(self.movePen)
-    self.penworker.signals.onPenLift.connect(self.showPen)
+    if self.config.get("show_pen_on_lift", True):
+      self.penworker.signals.onPenLift.connect(self.showPen)
     if self.config.get("hide_pen_on_press", True):
         self.penworker.signals.onPenPress.connect(self.hidePen)
     self.penworker.signals.onPenNear.connect(self.showPen)

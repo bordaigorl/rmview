@@ -71,6 +71,7 @@ All the settings are optional.
 | `pen_trail`              | persistence of trail in ms                              | `200`         |
 | `background_color`       | color of window                                         | `"white"`     |
 | `hide_pen_on_press`      | if true, the pointer is hidden while writing            | `true`        |
+| `show_pen_on_lift`       | if true, the pointer is shown when lifting the pen      | `true`        |
 
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
