@@ -17,7 +17,6 @@
 > :warning: **WARNING** :warning::
 > rMview has only been tested with reMarkable 1.
 > Support for reMarkable 2 may come once it gets wider diffusion.
-> The [ssh branch][ssh-branch] should be compatible with the reMarkable 2.
 
 
 ## Installation
