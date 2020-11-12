@@ -85,6 +85,9 @@ Connection parameters are provided as a dictionary with the following keys (all 
 | `timeout`   | connection timeout in seconds          | default: 1                      |
 
 
+:warning: If you get an error when connect using a key, but the key seems ok when connecting manually with ssh, you probably need to convert the key to the PEM format (or re-generate it using the `-m PEM` option of `ssh-keygen`). See [here](https://github.com/paramiko/paramiko/issues/340#issuecomment-492448662) for details.
+
+
 ## To Do
 
  - [ ] Settings dialog
