@@ -75,16 +75,26 @@ All the settings are optional.
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
 
-| Parameter   | Values                                 | Comments                        |
-| ----------- | -------------------------------------- | ------------------------------- |
-| `address`   | IP of remarkable                       | tool prompts for it if missing  |
-| `username`  | username for ssh access on reMarkable  | default: `"root"`               |
-| `key`       | Local path to key for ssh              | not needed if password provided |
-| `password`  | Password provided by reMarkable        | not needed if key provided      |
-| `timeout`   | connection timeout in seconds          | default: 1                      |
+| Parameter                | Values                                 | Comments                        |
+| ------------------------ | -------------------------------------- | ------------------------------- |
+| `address`                | IP of remarkable                       | tool prompts for it if missing  |
+| `username`               | username for ssh access on reMarkable  | default: `"root"`               |
+| `key`                    | Local path to key for ssh              | not needed if password provided |
+| `password`               | Password provided by reMarkable        | not needed if key provided      |
+| `timeout`                | connection timeout in seconds          | default: 1                      |
+| `insecure_auto_add_host` | ignores the check on the fingerprint   | default: `false`                |
 
 
-:warning: If you get an error when connect using a key, but the key seems ok when connecting manually with ssh, you probably need to convert the key to the PEM format (or re-generate it using the `-m PEM` option of `ssh-keygen`). See [here](https://github.com/paramiko/paramiko/issues/340#issuecomment-492448662) for details.
+:warning: **Connecting after an update:**
+An update to the reMarkable tablet would change its "fingerprint" i.e. the identifier that signals we are connecting to the expected device (and not somebody impersonating it).
+When this happens you may get an error message upon connection.
+There are two main ways to fix this:
+ 1. Change your `.known_hosts` file to match the new fingerprint (you can get instructions by connecting manually via ssh).
+ 2. Set the `insecure_auto_add_host` setting to `true`, which will make rmview ignore the check.
+    This is not recommended unless you are in a trusted network.
+
+:warning: **Key format error:**
+If you get an error when connect using a key, but the key seems ok when connecting manually with ssh, you probably need to convert the key to the PEM format (or re-generate it using the `-m PEM` option of `ssh-keygen`). See [here](https://github.com/paramiko/paramiko/issues/340#issuecomment-492448662) for details.
 
 
 ## To Do
