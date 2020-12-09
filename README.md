@@ -1,4 +1,4 @@
-# rMview: a fast live viewer for reMarkable
+# rMview: a fast live viewer for reMarkable 1
 
 [![Demo](https://raw.githubusercontent.com/bordaigorl/rmview/vnc/screenshot.png)][demo]
 
@@ -6,17 +6,18 @@
 ## Features
 
 * Demo [:rocket: here][demo]
-* Fast streaming of reMarkable's screen to a window in your computer
+* Fast streaming of the screen of your reMarkable 1 to a window in your computer
 * UI for zooming, panning, rotating
 * Pen tracking: a pointer follows the position of the pen when hovering on the reMarkable
 * Clone a frame into separate window for reference
-* Save screenshot as PNG
-
-> :loudspeaker: **Volunteers needed**: if you have experience with producing binary bundles with pyQt, and feel like contributing to the project, drop me a line!
+* Save screenshots as PNG
 
 > :warning: **WARNING** :warning::
-> rMview has only been tested with reMarkable 1.
-> Support for reMarkable 2 may come once it gets wider diffusion.
+> rMview supports **reMarkable 1 only**, see [this issue](https://github.com/bordaigorl/rmview/issues/22).
+> Support for reMarkable 2 may come once it gets wider diffusion and a reliable method to stream the framebuffer data is found.
+
+
+> :loudspeaker: **Volunteers needed**: if you have experience with producing binary bundles with pyQt, and feel like contributing to the project, drop me a line!
 
 
 ## Installation
