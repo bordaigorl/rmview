@@ -117,6 +117,8 @@ class rMViewApp(QApplication):
       portrait = True
     elif c(5,5) == 4278190080:
       portrait = True
+    elif c(40,47) == 4278190080 and c(40,119) == 4278190080:
+      portrait = True
     if portrait:
        self.viewer.portrait()
        self.autoResize(HEIGHT / WIDTH)
