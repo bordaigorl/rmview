@@ -42,9 +42,10 @@ class rMViewApp(QApplication):
     log.info("Searching configuration in " + ', '.join(config_files))
     for f in config_files:
       try:
-        with open(os.path.expanduser(f)) as config_file:
+        f = os.path.expanduser(f)
+        with open(f) as config_file:
           self.config = json.load(config_file)
-          self.config_file = config_file
+          self.config_file = f
           log.info("Fetching configuration from " + f)
           break
       except json.JSONDecodeError as e:
