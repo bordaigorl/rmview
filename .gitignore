@@ -1,5 +1,7 @@
+.DS_Store
+
 svg/
-src/resources.py
+src/rmview/resources.py
 
 ###Python###
 
@@ -39,6 +41,7 @@ MANIFEST
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pip-wheel-metadata
 
 # pyenv
 .python-version
