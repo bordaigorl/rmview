@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
-from PyQt5.QtGui import QImage, QPixmap, QTransform, QIcon
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QFileDialog, QAction, QMenu
+from PyQt5.QtGui import QWindow, QImage, QPixmap, QTransform, QIcon
+from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QFileDialog, QAction, QMenu
 
 
 class QtImageViewer(QGraphicsView):
@@ -165,11 +165,17 @@ class QtImageViewer(QGraphicsView):
   def rotateCW(self):
     self.rotate(90)
     self._rotation += 90
+    if not self.windowState() & (QWindow.FullScreen | QWindow.Maximized):
+      s = QApplication.desktop().availableGeometry(self).size()
+      self.resize(self.size().transposed().boundedTo(s))
     self.updateViewer()
 
   def rotateCCW(self):
     self.rotate(-90)
     self._rotation -= 90
+    if not self.windowState() & (QWindow.FullScreen | QWindow.Maximized):
+      s = QApplication.desktop().availableGeometry(self).size()
+      self.resize(self.size().transposed().boundedTo(s))
     self.updateViewer()
 
   def zoomIn(self):
