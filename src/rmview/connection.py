@@ -52,7 +52,7 @@ class rMConnect(QRunnable):
       else:
         pkey = None
         if password is None:
-          raise Exception("Must provide either password or SSH key")
+          log.warning("No key nor password given. System-wide SSH connection parameters are going to be used.")
 
       self.options = {
         'username': username,

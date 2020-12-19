@@ -143,12 +143,8 @@ class rMViewApp(QApplication):
   def ensureConnConfig(self):
     if self.config['ssh'].get('address') is None:
       address, ok = QInputDialog.getText(self.viewer, "Configuration","IP Address of your reMarkable:", QLineEdit.Normal, "10.11.99.1")
-      if ok and address:
-        self.config['ssh']['address'] = address
-      else:
-        self.quit()
 
-    if self.config['ssh'].get('password') is None and self.config['ssh'].get('key') is None:
+    if self.config['ssh'].get('ask_password'):
       password, ok = QInputDialog.getText(self.viewer, "Configuration","reMarkable password:", QLineEdit.Password)
       if ok:
         self.config['ssh']['password'] = password or ""
