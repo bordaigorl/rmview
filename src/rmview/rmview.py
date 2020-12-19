@@ -68,8 +68,14 @@ class rMViewApp(QApplication):
       self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
     act = QAction('Clone current frame', self)
     act.triggered.connect(self.cloneViewer)
-    self.viewer.menu.addSeparator()
+    # self.viewer.menu.addSeparator()
     self.viewer.menu.addAction(act)
+    if self.config_file:
+      act = QAction('Settings...', self)
+      act.triggered.connect(self.openSettings)
+      self.viewer.menu.addSeparator()
+      self.viewer.menu.addAction(act)
+
     self.viewer.setWindowTitle("rMview")
     self.viewer.show()
 
@@ -204,7 +210,8 @@ class rMViewApp(QApplication):
         "If you are unsure, please consult the documentation.")
       mbox.addButton(QMessageBox.Cancel)
       mbox.addButton(QMessageBox.Help)
-      mbox.addButton("Settings...", QMessageBox.YesRole)
+      if self.config_file:
+        mbox.addButton("Settings...", QMessageBox.YesRole)
       mbox.addButton("Auto Install", QMessageBox.AcceptRole)
       mbox.setDefaultButton(0)
       answer = mbox.exec()
@@ -237,8 +244,7 @@ class rMViewApp(QApplication):
         self.quit()
         return
       else:
-        QDesktopServices.openUrl(QUrl("file://" + self.config_file))
-        self.quit()
+        self.openSettings(prompt=False)
         return
 
     self.fbworker = FrameBufferWorker(ssh, delay=self.config.get('fetch_frame_delay'))
@@ -305,6 +311,21 @@ class rMViewApp(QApplication):
     v.setImage(img)
     v.show()
 
+  @pyqtSlot()
+  def openSettings(self, prompt=True):
+    if prompt:
+      ans = QMessageBox.information(
+              self.viewer,
+              "Opening Settings",
+              'To load the new settings you need to relaunch rMview.',
+              buttons=(QMessageBox.Ok | QMessageBox.Cancel),
+              defaultButton=QMessageBox.Ok
+            )
+      if ans == QMessageBox.Cancel:
+        return
+
+    QDesktopServices.openUrl(QUrl("file://" + os.path.abspath(self.config_file)))
+    self.quit()
 
   @pyqtSlot(Exception)
   def connectionError(self, e):
@@ -316,7 +337,8 @@ class rMViewApp(QApplication):
     mbox.setIconPixmap(icon)
     mbox.setInformativeText("I could not connect to the reMarkable at %s:\n%s." % (self.config.get('ssh').get('address'), e))
     mbox.addButton(QMessageBox.Cancel)
-    # mbox.addButton("Settings...", QMessageBox.ResetRole)
+    if self.config_file:
+      mbox.addButton("Settings...", QMessageBox.ResetRole)
     mbox.addButton(QMessageBox.Retry)
     mbox.setDefaultButton(QMessageBox.Retry)
     answer = mbox.exec()
@@ -325,7 +347,7 @@ class rMViewApp(QApplication):
     elif answer == QMessageBox.Cancel:
       self.quit()
     else:
-      # self.open_settings()
+      self.openSettings(prompt=False)
       self.quit()
 
   @pyqtSlot(Exception)
