@@ -7,6 +7,8 @@ from .workers import FrameBufferWorker, PointerWorker
 from .connection import rMConnect
 from .viewer import QtImageViewer
 
+from paramiko import BadHostKeyException, SSHException
+
 from .rmparams import *
 
 import sys
@@ -335,7 +337,39 @@ class rMViewApp(QApplication):
     icon = QPixmap(":/assets/dead.svg")
     icon.setDevicePixelRatio(self.devicePixelRatio())
     mbox.setIconPixmap(icon)
-    mbox.setInformativeText("I could not connect to the reMarkable at %s:\n%s." % (self.config.get('ssh').get('address'), e))
+    if isinstance(e, BadHostKeyException):
+      mbox.setDetailedText(str(e))
+      mbox.setInformativeText(
+        "<big>The host at %s has the wrong key.<br>"
+        "This usually happens just after a software update on the tablet.</big><br><br>"
+        "You have three options to fix this problem:"
+        "<ol><li>"
+        "Change your <code>~/.ssh/known_hosts</code> file to match the new fingerprint.<br>"
+        "The easiest way to do this is connecting manually via ssh and follow the instructions."
+        "<br></li><li>"
+        "Set <code>\"insecure_auto_add_host\": true</code> to rmView\'s settings.<br>"
+        "This is not recommended unless you are in a trusted network."
+        "<br></li><li>"
+        "Connect using username/password."
+        "<br></li><ol>" % (self.config.get('ssh').get('address'))
+      )
+    elif isinstance(e, SSHException) and str(e).endswith('known_hosts'):
+      mbox.setInformativeText(
+        "<big>The host at %s is unknown.<br>"
+        "This usually happens if this is the first time you use ssh with your tablet.</big><br><br>"
+        "You have three options to fix this problem:"
+        "<ol><li>"
+        "Change your <code>~/.ssh/known_hosts</code> file to match the new fingerprint.<br>"
+        "The easiest way to do this is connecting manually via ssh and follow the instructions."
+        "<br></li><li>"
+        "Set <code>\"insecure_auto_add_host\": true</code> to rmView\'s settings.<br>"
+        "This is not recommended unless you are in a trusted network."
+        "<br></li><li>"
+        "Connect using username/password."
+        "<br></li><ol>" % (self.config.get('ssh').get('address'))
+      )
+    else:
+      mbox.setInformativeText("I could not connect to the reMarkable at %s:\n%s." % (self.config.get('ssh').get('address'), e))
     mbox.addButton(QMessageBox.Cancel)
     if self.config_file:
       mbox.addButton("Settings...", QMessageBox.ResetRole)

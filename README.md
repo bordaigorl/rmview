@@ -90,7 +90,7 @@ Connection parameters are provided as a dictionary with the following keys (all 
 An update to the reMarkable tablet would change its "fingerprint" i.e. the identifier that signals we are connecting to the expected device (and not somebody impersonating it).
 When this happens you may get an error message upon connection.
 There are two main ways to fix this:
- 1. Change your `.known_hosts` file to match the new fingerprint (you can get instructions by connecting manually via ssh).
+ 1. Change your `~/.ssh/known_hosts` file to match the new fingerprint (you can get instructions by connecting manually via ssh).
  2. Set the `insecure_auto_add_host` setting to `true`, which will make rmview ignore the check.
     This is not recommended unless you are in a trusted network.
 
