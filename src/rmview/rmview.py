@@ -108,7 +108,9 @@ class rMViewApp(QApplication):
     # act.triggered.connect(self.viewer.screenshot)
 
 
-    self.ensureConnConfig()
+    if not self.ensureConnConfig(): # I know, it's ugly
+      QTimer.singleShot(0, lambda: self.quit())
+      return
 
     self.threadpool = QThreadPool()
     self.aboutToQuit.connect(self.joinWorkers)
@@ -155,15 +157,19 @@ class rMViewApp(QApplication):
       if ok and address:
         self.config['ssh']['address'] = address
       else:
-        self.quit()
+        return False
 
-    if self.config['ssh'].get('ask_password'):
+    auth_method = self.config['ssh'].get('auth_method')
+    if (auth_method == 'password' and 'password' not in self.config['ssh']) or \
+       (auth_method is None and 'password' not in self.config['ssh'] and 'key' not in self.config['ssh']):
       password, ok = QInputDialog.getText(self.viewer, "Configuration","reMarkable password:", QLineEdit.Password)
       if ok:
         self.config['ssh']['password'] = password or ""
       else:
-        self.quit()
+        return False
+
     log.info(self.config)
+    return True
 
   def requestConnect(self):
     self.viewer.setWindowTitle("rMview - Connecting...")

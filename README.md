@@ -76,19 +76,22 @@ All the settings are optional.
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
 
-| Parameter                | Values                                 | Comments                        |
-| ------------------------ | -------------------------------------- | ------------------------------- |
-| `address`                | IP of remarkable                       | tool prompts for it if missing  |
-| `username`               | username for ssh access on reMarkable  | default: `"root"`               |
-| `key`                    | Local path to key for ssh              | not needed if password provided |
-| `password`               | Password provided by reMarkable        | not needed if key provided      |
-| `ask_password`           | Prompt for password at launch          | default: `false`                |
-| `timeout`                | connection timeout in seconds          | default: 1                      |
-| `insecure_auto_add_host` | ignores the check on the fingerprint   | default: `false`                |
+| Parameter                | Values                                 | Comments                              |
+| ------------------------ | -------------------------------------- | ------------------------------------- |
+| `address`                | IP of remarkable                       | tool prompts for it if missing        |
+| `auth_method`            | Either `"password"` or `"key"`         | defaults to password if key not given |
+| `username`               | Username for ssh access on reMarkable  | default: `"root"`                     |
+| `key`                    | Local path to key for ssh              | not needed if password provided       |
+| `password`               | Password provided by reMarkable        | not needed if key provided            |
+| `timeout`                | Connection timeout in seconds          | default: 1                            |
+| `insecure_auto_add_host` | Ignores the check on the fingerprint   | default: `false`                      |
 
 The `address` parameter can be either:
 - a single string, in which case the address is used for connection
 - a list of strings, which will be presented at launch for selection
+
+If `auth_method` is `password` but no password is specified, then the tool will ask for the password on connection.
+
 
 :warning: **Connecting after an update:**
 An update to the reMarkable tablet would change its "fingerprint" i.e. the identifier that signals we are connecting to the expected device (and not somebody impersonating it).
