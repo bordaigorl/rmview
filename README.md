@@ -42,7 +42,7 @@
 To run the tool after installation just run `rmview` from a console.
 
 > :warning: **WARNING** :warning::
-> If you use [Anaconda][anaconda], please install the dependencies via `conda` (and not `pip`).
+> If you use [Anaconda][anaconda], please install the dependencies via `conda` (and not `pip`) then run `pip install .`.
 
 Tested with Python 3.8.2, PyQt 5.14.2, MacOs 10.15.4, reMarkable firmware 2.1.1.3.
 
