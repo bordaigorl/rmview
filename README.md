@@ -81,14 +81,20 @@ Connection parameters are provided as a dictionary with the following keys (all 
 | `address`                | IP of remarkable                       | tool prompts for it if missing        |
 | `auth_method`            | Either `"password"` or `"key"`         | defaults to password if key not given |
 | `username`               | Username for ssh access on reMarkable  | default: `"root"`                     |
-| `key`                    | Local path to key for ssh              | not needed if password provided       |
 | `password`               | Password provided by reMarkable        | not needed if key provided            |
+| `key`                    | Local path to key for ssh              | not needed if password provided       |
 | `timeout`                | Connection timeout in seconds          | default: 1                            |
 | `insecure_auto_add_host` | Ignores the check on the fingerprint   | default: `false`                      |
 
 The `address` parameter can be either:
 - a single string, in which case the address is used for connection
 - a list of strings, which will be presented at launch for selection
+
+To establish a connection with the tablet, you can use any of the following:
+- Leave `auth_method`, `password` and `key` unspecified: this will ask for a password
+- Specify `"auth_method": "key"` to use a SSH key. In case an SSH key hasn't already been associated with the tablet, you can provide its path with the `key` setting.
+- Provide a `password` in settings
+
 
 If `auth_method` is `password` but no password is specified, then the tool will ask for the password on connection.
 
