@@ -37,8 +37,12 @@ class rMViewApp(QApplication):
 
   def __init__(self, args):
     super(rMViewApp, self).__init__(args)
+
+    self.DEFAULT_CONFIG = QStandardPaths.standardLocations(QStandardPaths.ConfigLocation)[0]
+    self.DEFAULT_CONFIG = os.path.join(self.DEFAULT_CONFIG, 'rmview.json')
+
     config_files = [] if len(args) < 2 else [args[1]]
-    config_files += ['rmview.json']
+    config_files += ['rmview.json', self.DEFAULT_CONFIG]
     rmview_conf = os.environ.get("RMVIEW_CONF")
     if rmview_conf is not None:
         config_files += [rmview_conf]
@@ -72,11 +76,11 @@ class rMViewApp(QApplication):
     act.triggered.connect(self.cloneViewer)
     # self.viewer.menu.addSeparator()
     self.viewer.menu.addAction(act)
-    if self.config_file:
-      act = QAction('Settings...', self)
-      act.triggered.connect(self.openSettings)
-      self.viewer.menu.addSeparator()
-      self.viewer.menu.addAction(act)
+
+    act = QAction('Settings...', self)
+    act.triggered.connect(self.openSettings)
+    self.viewer.menu.addSeparator()
+    self.viewer.menu.addAction(act)
 
     self.viewer.setWindowTitle("rMview")
     self.viewer.show()
@@ -218,8 +222,7 @@ class rMViewApp(QApplication):
         "If you are unsure, please consult the documentation.")
       mbox.addButton(QMessageBox.Cancel)
       mbox.addButton(QMessageBox.Help)
-      if self.config_file:
-        mbox.addButton("Settings...", QMessageBox.YesRole)
+      mbox.addButton("Settings...", QMessageBox.ResetRole)
       mbox.addButton("Auto Install", QMessageBox.AcceptRole)
       mbox.setDefaultButton(0)
       answer = mbox.exec()
@@ -332,7 +335,17 @@ class rMViewApp(QApplication):
       if ans == QMessageBox.Cancel:
         return
 
-    QDesktopServices.openUrl(QUrl("file://" + os.path.abspath(self.config_file)))
+    confpath = os.path.abspath(self.config_file or self.DEFAULT_CONFIG)
+    if not os.path.isfile(confpath):
+      with open(confpath, "w") as f:
+        json.dump({
+            "ssh": {"address": [self.config['ssh'].get('address', "10.11.99.1")]},
+            "orientation": "auto",
+            "pen_size": 15,
+            "pen_color": "red",
+            "pen_trail": 200
+          }, f, indent=4)
+    QDesktopServices.openUrl(QUrl("file://" + confpath))
     self.quit()
 
   @pyqtSlot(Exception)
@@ -377,8 +390,7 @@ class rMViewApp(QApplication):
     else:
       mbox.setInformativeText("I could not connect to the reMarkable at %s:\n%s." % (self.config.get('ssh').get('address'), e))
     mbox.addButton(QMessageBox.Cancel)
-    if self.config_file:
-      mbox.addButton("Settings...", QMessageBox.ResetRole)
+    mbox.addButton("Settings...", QMessageBox.ResetRole)
     mbox.addButton(QMessageBox.Retry)
     mbox.setDefaultButton(QMessageBox.Retry)
     answer = mbox.exec()

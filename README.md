@@ -48,7 +48,13 @@ Tested with Python 3.8.2, PyQt 5.14.2, MacOs 10.15.4, reMarkable firmware 2.1.1.
 
 ## Usage and configuration
 
-You can invoke the program with
+**Suggested first use:**
+after installing run `rmview`, insert when prompted the IP of your tablet and the password,
+as found in the <kbd>Menu / Settings / Help / Copyright and Licences</kbd> menu of the tablet.
+Then, optionally, select "Settings..." from the context menu (or the error dialog) to open
+the default configuration file which you can edit according to the documentation below.
+
+More generally, you can invoke the program with
 
     rmview [config]
 
