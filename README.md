@@ -36,8 +36,8 @@
 
 
 3. On the reMarkable itself you need to install the standalone version of [rM-vnc-server][vnc].
-   Instructions can be found in the [wiki](https://github.com/bordaigorl/rmview/wiki/How-to-run-the-VNC-based-version).
-   This last step will be automated in the near future.
+   An automated mechanism will detect the lack of the rM-vnc-server on the device and install it when running rmview.
+   Alternatively manual instructions can be found in the [wiki](https://github.com/bordaigorl/rmview/wiki/How-to-run-the-VNC-based-version).
 
 To run the tool after installation just run `rmview` from a console.
 
