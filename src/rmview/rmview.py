@@ -210,16 +210,16 @@ class rMViewApp(QApplication):
       return
 
     # check needed files are in place
-    _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server ] && [ -e $HOME/mxc_epdc_fb_damage.ko ]")
+    _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server ]")
     if out.channel.recv_exit_status() != 0:
-      mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing some needed components.')
+      mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing the VNC server executable.')
       icon = QPixmap(":/assets/problem.svg")
       icon.setDevicePixelRatio(self.devicePixelRatio())
       mbox.setIconPixmap(icon)
       mbox.setInformativeText(
-        "To work properly, rmView needs the rM-vnc-server and mxc_epdc_fb_damage.ko files "\
+        "To work properly, rmView needs the rM-vnc-server executable "\
         "to be installed on your tablet.\n"\
-        "You can install them manually, or let rmView do the work for you by pressing 'Auto Install' below.\n\n"\
+        "You can install it manually, or let rmView do the work for you by pressing 'Auto Install' below.\n\n"\
         "If you are unsure, please consult the documentation.")
       mbox.addButton(QMessageBox.Cancel)
       mbox.addButton(QMessageBox.Help)
