@@ -145,7 +145,7 @@ I took inspiration from the following projects:
 - [QtImageViewer](https://github.com/marcel-goldschen-ohm/PyQtImageViewer/)
 - [remarkable_mouse](https://github.com/Evidlo/remarkable_mouse/)
 - [reStream](https://github.com/rien/reStream)
-- [rM-vnc-server](https://github.com/peter-sa/rM-vnc-server)
+- [rM-vnc-server](https://github.com/pl-semiotics/rM-vnc-server)
 - [VNC client](https://github.com/sibson/vncdotool) originally written by Chris Liechti
 
 Icons adapted from designs by Freepik, xnimrodx from www.flaticon.com
@@ -161,7 +161,7 @@ This project is not affiliated to, nor endorsed by, [reMarkable AS](https://rema
 
 GPLv3
 
-[vnc]: https://github.com/peter-sa/rM-vnc-server
+[vnc]: https://github.com/pl-semiotics/rM-vnc-server
 [demo]: https://www.reddit.com/r/RemarkableTablet/comments/gtjrqt/rmview_now_with_support_for_vnc/
 [ssh-branch]: https://github.com/bordaigorl/rmview/tree/ssh
 [vnc-branch]: https://github.com/bordaigorl/rmview/tree/vnc
