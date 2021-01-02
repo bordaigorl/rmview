@@ -27,7 +27,7 @@
    > :warning: Please make sure `pip` is pointing to the Python3 version if your system has Python2 as well.
    If not, use `pip3` instead of `pip` in what follows.
 
-2. The easiest installation method is by using pip:
+2. The easiest installation method is by using pip, from the root folder of this repository:
 
        pip install .
 
