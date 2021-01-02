@@ -42,6 +42,7 @@ class RFB(RFBClient):
       HEXTILE_ENCODING,
       CORRE_ENCODING,
       RRE_ENCODING,
+      PSEUDO_CURSOR_ENCODING,
       RAW_ENCODING ])
     self.framebufferUpdateRequest()
 
