@@ -233,15 +233,11 @@ class rMViewApp(QApplication):
         try:
           sftp = ssh.open_sftp()
           from stat import S_IXUSR
-          fo = QFile(':bin/rM-vnc-server')
+          fo = QFile(':bin/rM%s-vnc-server-standalone' % ver[1])
           fo.open(QIODevice.ReadOnly)
           sftp.putfo(fo, 'rM-vnc-server')
           fo.close()
           sftp.chmod('rM-vnc-server', S_IXUSR)
-          fo = QFile(':bin/mxc_epdc_fb_damage.ko')
-          fo.open(QIODevice.ReadOnly)
-          sftp.putfo(fo, 'mxc_epdc_fb_damage.ko')
-          fo.close()
           log.info("Installation successful!")
         except Exception as e:
           log.error('%s %s', type(e), e)
