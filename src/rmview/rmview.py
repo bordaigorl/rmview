@@ -209,6 +209,8 @@ class rMViewApp(QApplication):
       self.quit()
       return
 
+    version = int(ver[1])
+
     # check needed files are in place
     _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server ]")
     if out.channel.recv_exit_status() != 0:
@@ -233,7 +235,7 @@ class rMViewApp(QApplication):
         try:
           sftp = ssh.open_sftp()
           from stat import S_IXUSR
-          fo = QFile(':bin/rM%s-vnc-server-standalone' % ver[1])
+          fo = QFile(':bin/rM%d-vnc-server-standalone' % version)
           fo.open(QIODevice.ReadOnly)
           sftp.putfo(fo, 'rM-vnc-server')
           fo.close()
@@ -260,7 +262,7 @@ class rMViewApp(QApplication):
     self.fbworker.signals.onFatalError.connect(self.frameError)
     self.threadpool.start(self.fbworker)
 
-    self.penworker = PointerWorker(ssh)
+    self.penworker = PointerWorker(ssh, path="/dev/input/event%d" % (version-1))
     self.threadpool.start(self.penworker)
     self.pen = self.viewer.scene.addEllipse(0,0,self.pen_size,self.pen_size,
                                             pen=QPen(QColor('white')),

@@ -44,6 +44,7 @@ class RFB(RFBClient):
       RRE_ENCODING,
       PSEUDO_CURSOR_ENCODING,
       RAW_ENCODING ])
+    time.sleep(.1) # get first image without artifacts
     self.framebufferUpdateRequest()
 
   def sendPassword(self, password):
@@ -134,8 +135,9 @@ class PointerWorker(QRunnable):
 
   _stop = False
 
-  def __init__(self, ssh, threshold=1000):
+  def __init__(self, ssh, path="/dev/input/event0", threshold=1000):
     super(PointerWorker, self).__init__()
+    self.event = path
     self.ssh = ssh
     self.threshold = threshold
     self.signals = PWSignals()
@@ -146,7 +148,7 @@ class PointerWorker(QRunnable):
 
   @pyqtSlot()
   def run(self):
-    penkill, penstream, _ = self.ssh.exec_command('cat /dev/input/event0 & { read ; kill %1; }')
+    penkill, penstream, _ = self.ssh.exec_command('cat %s & { read ; kill %%1; }' % self.event)
     self._penkill = penkill
     new_x = new_y = False
     state = LIFTED
