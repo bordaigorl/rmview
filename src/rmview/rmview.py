@@ -197,14 +197,15 @@ class rMViewApp(QApplication):
     self.ssh = ssh
     self.viewer.setWindowTitle("rMview - " + self.config.get('ssh').get('address'))
 
-    # check we are dealing with RM1
+    # check we are dealing with RM1 or RM2
     # cat /sys/devices/soc0/machine -> reMarkable 1.x
+    # cat /sys/devices/soc0/machine -> reMarkable 2.x
     _,out,_ = ssh.exec_command("cat /sys/devices/soc0/machine")
     rmv = out.read().decode("utf-8")
     ver = re.fullmatch(r"reMarkable (\d+)\..*\n", rmv)
-    if ver is None or ver[1] != "1":
+    if ver is None or ver[1] not in ("1", "2"):
       log.error("Device is unsupported: '%s' [%s]", rmv, ver[1] if ver else "unknown device")
-      QMessageBox.critical(None, "Unsupported device", 'The detected device is %s.\nrmView currently only supports reMarkable 1.' % rmv)
+      QMessageBox.critical(None, "Unsupported device", 'The detected device is %s.\nrmView currently only supports reMarkable 1 and reMarkable 2.' % rmv)
       self.quit()
       return
 
