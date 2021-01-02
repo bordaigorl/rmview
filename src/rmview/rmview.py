@@ -201,22 +201,24 @@ class rMViewApp(QApplication):
     # cat /sys/devices/soc0/machine -> reMarkable 1.x
     _,out,_ = ssh.exec_command("cat /sys/devices/soc0/machine")
     rmv = out.read().decode("utf-8")
-    ver = re.fullmatch(r"reMarkable (\d+)\..*\n", rmv)
-    if ver is None or ver[1] != "1":
-      log.error("Device is unsupported: '%s' [%s]", rmv, ver[1] if ver else "unknown device")
+    version = re.fullmatch(r"reMarkable (\d+)\..*\n", rmv)
+    if version is None or version[1] not in ["1", "2"]:
+      log.error("Device is unsupported: '%s' [%s]", rmv, version[1] if version else "unknown device")
       QMessageBox.critical(None, "Unsupported device", 'The detected device is %s.\nrmView currently only supports reMarkable 1.' % rmv)
       self.quit()
       return
 
+    version = int(version[1])
+
     # check needed files are in place
-    _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server ] && [ -e $HOME/mxc_epdc_fb_damage.ko ]")
+    _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server-standalone ]")
     if out.channel.recv_exit_status() != 0:
       mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing some needed components.')
       icon = QPixmap(":/assets/problem.svg")
       icon.setDevicePixelRatio(self.devicePixelRatio())
       mbox.setIconPixmap(icon)
       mbox.setInformativeText(
-        "To work properly, rmView needs the rM-vnc-server and mxc_epdc_fb_damage.ko files "\
+        "To work properly, rmView needs the rM-vnc-server-standalone program "\
         "to be installed on your tablet.\n"\
         "You can install them manually, or let rmView do the work for you by pressing 'Auto Install' below.\n\n"\
         "If you are unsure, please consult the documentation.")
@@ -232,15 +234,11 @@ class rMViewApp(QApplication):
         try:
           sftp = ssh.open_sftp()
           from stat import S_IXUSR
-          fo = QFile(':bin/rM-vnc-server')
+          fo = QFile(':bin/rM%d-vnc-server-standalone' % version)
           fo.open(QIODevice.ReadOnly)
-          sftp.putfo(fo, 'rM-vnc-server')
+          sftp.putfo(fo, 'rM-vnc-server-standalone')
           fo.close()
-          sftp.chmod('rM-vnc-server', S_IXUSR)
-          fo = QFile(':bin/mxc_epdc_fb_damage.ko')
-          fo.open(QIODevice.ReadOnly)
-          sftp.putfo(fo, 'mxc_epdc_fb_damage.ko')
-          fo.close()
+          sftp.chmod('rM-vnc-server-standalone', S_IXUSR)
           log.info("Installation successful!")
         except Exception as e:
           log.error('%s %s', type(e), e)
@@ -263,7 +261,7 @@ class rMViewApp(QApplication):
     self.fbworker.signals.onFatalError.connect(self.frameError)
     self.threadpool.start(self.fbworker)
 
-    self.penworker = PointerWorker(ssh)
+    self.penworker = PointerWorker(ssh, path="/dev/input/event%d" % (version-1))
     self.threadpool.start(self.penworker)
     self.pen = self.viewer.scene.addEllipse(0,0,self.pen_size,self.pen_size,
                                             pen=QPen(QColor('white')),

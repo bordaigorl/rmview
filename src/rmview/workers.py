@@ -41,8 +41,10 @@ class RFB(RFBClient):
     self.setEncodings([
       HEXTILE_ENCODING,
       CORRE_ENCODING,
+      PSEUDO_CURSOR_ENCODING,
       RRE_ENCODING,
       RAW_ENCODING ])
+    time.sleep(.1) # get first image without artifacts
     self.framebufferUpdateRequest()
 
   def sendPassword(self, password):
@@ -89,11 +91,11 @@ class FrameBufferWorker(QRunnable):
     log.info("Stopping framebuffer thread...")
     reactor.callFromThread(reactor.stop)
     try:
-      self.ssh.exec_command("killall rM-vnc-server", timeout=3)
+      self.ssh.exec_command("killall rM-vnc-server-standalone", timeout=3)
     except Exception as e:
       log.warning("VNC could not be stopped on the reMarkable.")
       log.warning("Although this is not a big problem, it may consume some resources until you restart the tablet.")
-      log.warning("You can manually terminate it by running `ssh %s killall rM-vnc-server`.", self.ssh.hostname)
+      log.warning("You can manually terminate it by running `ssh %s killall rM-vnc-server-standalone`.", self.ssh.hostname)
       log.error(e)
     log.info("Framebuffer thread stopped")
 
@@ -102,7 +104,7 @@ class FrameBufferWorker(QRunnable):
     try:
       _,out,_ = self.ssh.exec_command("/sbin/insmod $HOME/mxc_epdc_fb_damage.ko")
       log.debug("Insmod returned %d", out.channel.recv_exit_status())
-      _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server")
+      _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server-standalone")
       log.info(next(out))
     except Exception as e:
       self.signals.onFatalError.emit(e)
@@ -133,8 +135,9 @@ class PointerWorker(QRunnable):
 
   _stop = False
 
-  def __init__(self, ssh, threshold=1000):
+  def __init__(self, ssh, path="/dev/input/event0", threshold=1000):
     super(PointerWorker, self).__init__()
+    self.event = path
     self.ssh = ssh
     self.threshold = threshold
     self.signals = PWSignals()
@@ -145,7 +148,7 @@ class PointerWorker(QRunnable):
 
   @pyqtSlot()
   def run(self):
-    penkill, penstream, _ = self.ssh.exec_command('cat /dev/input/event0 & { read ; kill %1; }')
+    penkill, penstream, _ = self.ssh.exec_command('cat %s & { read ; kill %%1; }' % self.event)
     self._penkill = penkill
     new_x = new_y = False
     state = LIFTED
