@@ -35,7 +35,7 @@
    Alternatively you may want to install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted]) with `pip` manually.
 
 
-3. On the reMarkable itself you need to install [rM-vnc-server][vnc] and its dependency [mxc_epdc_fb_damage](https://github.com/peter-sa/mxc_epdc_fb_damage).
+3. On the reMarkable itself you need to install the standalone version of [rM-vnc-server][vnc].
    Instructions can be found in the [wiki](https://github.com/bordaigorl/rmview/wiki/How-to-run-the-VNC-based-version).
    This last step will be automated in the near future.
 
