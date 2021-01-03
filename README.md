@@ -17,7 +17,7 @@
 > :loudspeaker: **Volunteers needed**: if you have experience with producing binary bundles with pyQt, and feel like contributing to the project, drop me a line!
 
 
-Check the [releases page](/bordaigorl/rmview/releases) for executable bundles.
+Check the [releases page](https://github.com/bordaigorl/rmview/releases) for executable bundles.
 If there is no bundle for your operating system then follow the installation instructions below.
 
 
