@@ -44,7 +44,7 @@ Then, from anywhere, you can execute `rmview` from the command line.
 The tool will ask for the connection parameters and then ask permission to install the VNC server on the tablet.
 Press <kbd>Auto install</kbd> to proceed.
 
-## Manual installation
+### Manual installation
 
 Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted]) with `pip` or `conda` manually:
 
@@ -155,12 +155,15 @@ The `ssh` branch of this repo hosts the reStreamer-like version for those who pr
 
 ## Credits
 
+The VNC server running on the tablet is developed by @pl-semiotics:
+
+- [rM-vnc-server][vnc]
+
 I took inspiration from the following projects:
 
 - [QtImageViewer](https://github.com/marcel-goldschen-ohm/PyQtImageViewer/)
 - [remarkable_mouse](https://github.com/Evidlo/remarkable_mouse/)
 - [reStream](https://github.com/rien/reStream)
-- [rM-vnc-server][vnc]
 - [VNC client](https://github.com/sibson/vncdotool) originally written by Chris Liechti
 
 Icons adapted from designs by Freepik, xnimrodx from www.flaticon.com
