@@ -1,4 +1,4 @@
-# rMview: a fast live viewer for reMarkable 1
+# rMview: a fast live viewer for reMarkable 1 and 2
 
 [![Demo](https://raw.githubusercontent.com/bordaigorl/rmview/vnc/screenshot.png)][demo]
 
@@ -6,45 +6,60 @@
 ## Features
 
 * Demo [:rocket: here][demo]
-* Fast streaming of the screen of your reMarkable 1 to a window in your computer
+* Fast streaming of the screen of your reMarkable to a window in your computer
+* Support for reMarkable 1 and 2
 * UI for zooming, panning, rotating
 * Pen tracking: a pointer follows the position of the pen when hovering on the reMarkable
 * Clone a frame into separate window for reference
 * Save screenshots as PNG
 
-> :warning: **WARNING** :warning::
-> rMview supports **reMarkable 1 only**, see [this issue](https://github.com/bordaigorl/rmview/issues/22).
-> Support for reMarkable 2 may come once it gets wider diffusion and a reliable method to stream the framebuffer data is found.
-
 
 > :loudspeaker: **Volunteers needed**: if you have experience with producing binary bundles with pyQt, and feel like contributing to the project, drop me a line!
 
 
+Check the [releases page](/bordaigorl/rmview/releases) for executable bundles.
+If there is no bundle for your operating system then follow the installation instructions below.
+
+
 ## Installation
 
-1. You will need [Python3][py3] on your computer.
+As a basic prerequisite you will need [Python3][py3] on your computer.
 
-   > :warning: Please make sure `pip` is pointing to the Python3 version if your system has Python2 as well.
-   If not, use `pip3` instead of `pip` in what follows.
-
-2. The easiest installation method is by using pip, from the root folder of this repository:
-
-       pip install .
-
-   which will install all required dependencies and install a new `rmview` command.
-   Alternatively you may want to install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted]) with `pip` manually.
-
-
-3. On the reMarkable itself you need to install [rM-vnc-server][vnc] and its dependency [mxc_epdc_fb_damage](https://github.com/peter-sa/mxc_epdc_fb_damage).
-   Instructions can be found in the [wiki](https://github.com/bordaigorl/rmview/wiki/How-to-run-the-VNC-based-version).
-   This last step will be automated in the near future.
-
-To run the tool after installation just run `rmview` from a console.
+> :warning: Please make sure `pip` is pointing to the Python3 version if your system has Python2 as well.
+If not, use `pip3` instead of `pip` in what follows.
 
 > :warning: **WARNING** :warning::
 > If you use [Anaconda][anaconda], please install the dependencies via `conda` (and not `pip`) then run `pip install .`.
 
-Tested with Python 3.8.2, PyQt 5.14.2, MacOs 10.15.4, reMarkable firmware 2.1.1.3.
+### Semi-automatic installation
+
+The easiest installation method is by using `pip`, from the root folder of this repository:
+
+       pip install .
+
+(please note the command ends with a dot)
+which will install all required dependencies and install a new `rmview` command.
+
+Then, from anywhere, you can execute `rmview` from the command line.
+The tool will ask for the connection parameters and then ask permission to install the VNC server on the tablet.
+Press <kbd>Auto install</kbd> to proceed.
+
+## Manual installation
+
+Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted]) with `pip` or `conda` manually:
+
+    pip pyqt5 paramiko twisted
+
+Then you can run the program with `python -m rmview`.
+
+On the reMarkable itself you need to install [rM-vnc-server][vnc] by copying the relevant binary from the `bin` folder:
+
+    # For reMarkable 1
+    scp rM1-vnc-server-standalone REMARKABLE_ADDRESS:rM-vnc-server-standalone
+
+    # For reMarkable 2
+    scp rM2-vnc-server-standalone REMARKABLE_ADDRESS:rM-vnc-server-standalone
+
 
 ## Usage and configuration
 
@@ -135,7 +150,7 @@ There are two versions of rMview, presenting the same interface but using differ
 * The "reStreamer-like" version, in the [`ssh` branch][ssh-branch]
 
 In my tests, the VNC version is a clear winner.
-The `ssh` branch of this repo hosts the reStreamer-like version for those who prefer it, but I am not planning to update it.
+The `ssh` branch of this repo hosts the reStreamer-like version for those who prefer it, but it should be considered unmaintained.
 
 
 ## Credits
@@ -145,7 +160,7 @@ I took inspiration from the following projects:
 - [QtImageViewer](https://github.com/marcel-goldschen-ohm/PyQtImageViewer/)
 - [remarkable_mouse](https://github.com/Evidlo/remarkable_mouse/)
 - [reStream](https://github.com/rien/reStream)
-- [rM-vnc-server](https://github.com/peter-sa/rM-vnc-server)
+- [rM-vnc-server][vnc]
 - [VNC client](https://github.com/sibson/vncdotool) originally written by Chris Liechti
 
 Icons adapted from designs by Freepik, xnimrodx from www.flaticon.com
@@ -161,7 +176,7 @@ This project is not affiliated to, nor endorsed by, [reMarkable AS](https://rema
 
 GPLv3
 
-[vnc]: https://github.com/peter-sa/rM-vnc-server
+[vnc]: https://github.com/pl-semiotics/rM-vnc-server
 [demo]: https://www.reddit.com/r/RemarkableTablet/comments/gtjrqt/rmview_now_with_support_for_vnc/
 [ssh-branch]: https://github.com/bordaigorl/rmview/tree/ssh
 [vnc-branch]: https://github.com/bordaigorl/rmview/tree/vnc
