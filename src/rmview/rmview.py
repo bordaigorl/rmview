@@ -338,6 +338,7 @@ class rMViewApp(QApplication):
 
     confpath = os.path.abspath(self.config_file or self.DEFAULT_CONFIG)
     if not os.path.isfile(confpath):
+      os.makedirs(os.path.dirname(confpath))
       with open(confpath, "w") as f:
         json.dump({
             "ssh": {"address": [self.config['ssh'].get('address', "10.11.99.1")]},
@@ -346,7 +347,7 @@ class rMViewApp(QApplication):
             "pen_color": "red",
             "pen_trail": 200
           }, f, indent=4)
-    QDesktopServices.openUrl(QUrl("file://" + confpath))
+    QDesktopServices.openUrl(QUrl("file:///" + confpath))
     self.quit()
 
   @pyqtSlot(Exception)
