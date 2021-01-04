@@ -67,6 +67,7 @@ class rMViewApp(QApplication):
     self.trailDelay = self.config.get('pen_trail', 200)
     self.trail = None if self.trailDelay == 0 else False
 
+    self.bar = QMenuBar()
     self.setWindowIcon(QIcon(':/assets/rmview.svg'))
 
     self.viewer = QtImageViewer()
@@ -96,20 +97,22 @@ class rMViewApp(QApplication):
       self.autoResize(HEIGHT / WIDTH)
       self.orient = True
 
-    # bar = QMenuBar()
-    # menu = bar.addMenu('&View')
-    # act = QAction('Rotate clockwise', self)
-    # act.setShortcut('Ctrl+Right')
-    # act.triggered.connect(self.viewer.rotateCW)
-    # menu.addAction(act)
-    # act = QAction('Rotate counter-clockwise', self)
-    # act.setShortcut('Ctrl+Left')
-    # act.triggered.connect(self.viewer.rotateCCW)
-    # menu.addAction(act)
-    # menu.addSeparator()
-    # act = QAction('Save screenshot', self)
-    # act.setShortcut('Ctrl+S')
-    # act.triggered.connect(self.viewer.screenshot)
+    # Setup global menu
+    menu = self.bar.addMenu('&View')
+    act = QAction('Rotate clockwise', self)
+    act.setShortcut('Ctrl+Right')
+    act.triggered.connect(self.viewer.rotateCW)
+    menu.addAction(act)
+    act = QAction('Rotate counter-clockwise', self)
+    act.setShortcut('Ctrl+Left')
+    act.triggered.connect(self.viewer.rotateCCW)
+    menu.addAction(act)
+    menu.addSeparator()
+    act = QAction('Save screenshot', self)
+    act.setShortcut('Ctrl+S')
+    act.triggered.connect(self.viewer.screenshot)
+    menu.addAction(act)
+    menu.addSeparator()
 
 
     if not self.ensureConnConfig(): # I know, it's ugly
