@@ -13,6 +13,10 @@
 * Clone a frame into separate window for reference
 * Save screenshots as PNG
 
+> :warning: **For reMarkable 2 users** :warning::
+> rMview should work out of the box with the stock firmware.
+> If you use [`rm2fb`](https://github.com/ddvk/remarkable2-framebuffer) there are known compatibilities issues that are [being addressed](https://github.com/pl-semiotics/rM-vnc-server/issues/5).
+
 
 > :loudspeaker: **Volunteers needed**: if you have experience with producing binary bundles with pyQt, and feel like contributing to the project, drop me a line!
 
@@ -44,22 +48,26 @@ Then, from anywhere, you can execute `rmview` from the command line.
 The tool will ask for the connection parameters and then ask permission to install the VNC server on the tablet.
 Press <kbd>Auto install</kbd> to proceed.
 
+If you plan to modify the source code, use `pip install -e .` so that when executing `rmview` you will be running your custom version.
+
 ### Manual installation
 
 Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted]) with `pip` or `conda` manually:
 
+    # install dependencies
     pip pyqt5 paramiko twisted
-
-Then you can run the program with `python -m rmview`.
+    # build resources file
+    pyrcc5 -o src/rmview/resources.py resources.qrc
 
 On the reMarkable itself you need to install [rM-vnc-server][vnc] by copying the relevant binary from the `bin` folder:
 
     # For reMarkable 1
-    scp rM1-vnc-server-standalone REMARKABLE_ADDRESS:rM-vnc-server-standalone
+    scp bin/rM1-vnc-server-standalone REMARKABLE_ADDRESS:rM-vnc-server-standalone
 
     # For reMarkable 2
-    scp rM2-vnc-server-standalone REMARKABLE_ADDRESS:rM-vnc-server-standalone
+    scp bin/rM2-vnc-server-standalone REMARKABLE_ADDRESS:rM-vnc-server-standalone
 
+Then you can run the program with `python -m rmview`.
 
 ## Usage and configuration
 
