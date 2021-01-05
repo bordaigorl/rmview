@@ -1,2 +1,2 @@
 [build-system]
-requires = ["setuptools", "PyQt5"]
+requires = ["setuptools", "wheel", "PyQt5"]
