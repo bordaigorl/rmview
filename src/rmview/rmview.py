@@ -4,10 +4,10 @@ from PyQt5.QtCore import *
 
 from . import resources
 from .workers import FrameBufferWorker, PointerWorker
-from .connection import rMConnect
+from .connection import rMConnect, RejectNewHostKey, AddNewHostKey, UnknownHostKeyException
 from .viewer import QtImageViewer
 
-from paramiko import BadHostKeyException, SSHException
+from paramiko import BadHostKeyException, HostKeys
 
 from .rmparams import *
 
@@ -38,8 +38,9 @@ class rMViewApp(QApplication):
   def __init__(self, args):
     super(rMViewApp, self).__init__(args)
 
-    self.DEFAULT_CONFIG = QStandardPaths.standardLocations(QStandardPaths.ConfigLocation)[0]
-    self.DEFAULT_CONFIG = os.path.join(self.DEFAULT_CONFIG, 'rmview.json')
+    self.CONFIG_DIR = QStandardPaths.standardLocations(QStandardPaths.ConfigLocation)[0]
+    self.DEFAULT_CONFIG = os.path.join(self.CONFIG_DIR, 'rmview.json')
+    self.LOCAL_KNOWN_HOSTS = os.path.join(self.CONFIG_DIR, 'rmview_known_hosts')
 
     config_files = [] if len(args) < 2 else [args[1]]
     config_files += ['rmview.json', self.DEFAULT_CONFIG]
@@ -175,13 +176,27 @@ class rMViewApp(QApplication):
       else:
         return False
 
+    # backwards compatibility
+    if self.config['ssh'].get('insecure_auto_add_host') and 'host_key_policy' not in self.config['ssh']:
+      log.warning("The 'insecure_auto_add_host' setting is deprecated, see documentation.")
+      self.config['ssh']['host_key_policy'] = "ignore_all"
+
+    if self.config['ssh']['host_key_policy'] == "auto_add":
+      if not os.path.isfile(self.LOCAL_KNOWN_HOSTS):
+        open(self.LOCAL_KNOWN_HOSTS, 'a').close()
+
     log.info(self.config)
     return True
 
-  def requestConnect(self):
+  def requestConnect(self, host_key_policy=None):
     self.viewer.setWindowTitle("rMview - Connecting...")
+    args = self.config.get('ssh')
+    if host_key_policy:
+      args = args.copy()
+      args['host_key_policy'] = host_key_policy
     self.threadpool.start(
-      rMConnect(**self.config.get('ssh'),
+      rMConnect(**args,
+                known_hosts=self.LOCAL_KNOWN_HOSTS,
                 onError=self.connectionError,
                 onConnect=self.connected ) )
 
@@ -200,8 +215,6 @@ class rMViewApp(QApplication):
     self.ssh = ssh
     self.viewer.setWindowTitle("rMview - " + self.config.get('ssh').get('address'))
 
-    # check we are dealing with RM1
-    # cat /sys/devices/soc0/machine -> reMarkable 1.x
     _,out,_ = ssh.exec_command("cat /sys/devices/soc0/machine")
     rmv = out.read().decode("utf-8")
     version = re.fullmatch(r"reMarkable (\d+)\..*\n", rmv)
@@ -358,48 +371,63 @@ class rMViewApp(QApplication):
     icon = QPixmap(":/assets/dead.svg")
     icon.setDevicePixelRatio(self.devicePixelRatio())
     mbox.setIconPixmap(icon)
+    mbox.addButton("Settings...", QMessageBox.ResetRole)
+    mbox.addButton(QMessageBox.Cancel)
     if isinstance(e, BadHostKeyException):
       mbox.setDetailedText(str(e))
       mbox.setInformativeText(
         "<big>The host at %s has the wrong key.<br>"
         "This usually happens just after a software update on the tablet.</big><br><br>"
-        "You have three options to fix this problem:"
+        "You have three options to fix this permanently:"
         "<ol><li>"
+        "Press Update to replace the old key with the new."
+        "<br></li><li>"
         "Change your <code>~/.ssh/known_hosts</code> file to match the new fingerprint.<br>"
         "The easiest way to do this is connecting manually via ssh and follow the instructions."
         "<br></li><li>"
-        "Set <code>\"insecure_auto_add_host\": true</code> to rmView\'s settings.<br>"
+        "Set <code>\"host_key_policy\": \"ignore_new\"</code> in the <code>ssh</code> section of rmView\'s settings.<br>"
         "This is not recommended unless you are in a trusted network."
-        "<br></li><li>"
-        "Connect using username/password."
-        "<br></li><ol>" % (self.config.get('ssh').get('address'))
+        "<br></li><ol>" % (e.hostname)
       )
-    elif isinstance(e, SSHException) and str(e).endswith('known_hosts'):
+      mbox.addButton("Ignore", QMessageBox.NoRole)
+      mbox.addButton("Update", QMessageBox.YesRole)
+    elif isinstance(e, UnknownHostKeyException):
+      mbox.setDetailedText(str(e))
       mbox.setInformativeText(
         "<big>The host at %s is unknown.<br>"
         "This usually happens if this is the first time you use ssh with your tablet.</big><br><br>"
-        "You have three options to fix this problem:"
+        "You have three options to fix this permanently:"
         "<ol><li>"
+        "Press Add to add the key to the known hosts."
+        "<br></li><li>"
         "Change your <code>~/.ssh/known_hosts</code> file to match the new fingerprint.<br>"
         "The easiest way to do this is connecting manually via ssh and follow the instructions."
         "<br></li><li>"
-        "Set <code>\"insecure_auto_add_host\": true</code> to rmView\'s settings.<br>"
+        "Set <code>\"host_key_policy\": \"ignore_new\"</code> in the <code>ssh</code> section of rmView\'s settings.<br>"
         "This is not recommended unless you are in a trusted network."
-        "<br></li><li>"
-        "Connect using username/password."
-        "<br></li><ol>" % (self.config.get('ssh').get('address'))
+        "<br></li><ol>" % (e.hostname)
       )
+      mbox.addButton("Ignore", QMessageBox.NoRole)
+      mbox.addButton("Add", QMessageBox.YesRole)
     else:
       mbox.setInformativeText("I could not connect to the reMarkable at %s:\n%s." % (self.config.get('ssh').get('address'), e))
-    mbox.addButton(QMessageBox.Cancel)
-    mbox.addButton("Settings...", QMessageBox.ResetRole)
-    mbox.addButton(QMessageBox.Retry)
-    mbox.setDefaultButton(QMessageBox.Retry)
+      mbox.addButton(QMessageBox.Retry)
+      mbox.setDefaultButton(QMessageBox.Retry)
     answer = mbox.exec()
     if answer == QMessageBox.Retry:
       self.requestConnect()
     elif answer == QMessageBox.Cancel:
       self.quit()
+    elif answer == 1: # Ignore
+      self.requestConnect(host_key_policy="ignore_all")
+    elif answer == 2: # Add/Update
+      if not os.path.isfile(self.LOCAL_KNOWN_HOSTS):
+        open(self.LOCAL_KNOWN_HOSTS, 'a').close()
+      hk = HostKeys(self.LOCAL_KNOWN_HOSTS)
+      hk.add(e.hostname, e.key.get_name(), e.key)
+      hk.save(self.LOCAL_KNOWN_HOSTS)
+      log.info("Saved host key in %s", self.LOCAL_KNOWN_HOSTS)
+      self.requestConnect()
     else:
       self.openSettings(prompt=False)
       self.quit()

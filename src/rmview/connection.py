@@ -6,11 +6,49 @@ from PyQt5.QtWidgets import *
 import paramiko
 import struct
 import time
+from binascii import hexlify
 
 import sys
 import os
 import logging
 log = logging.getLogger('rmview')
+
+
+class UnknownHostKeyException(paramiko.SSHException):
+
+  def __init__(self, hostname, key):
+    paramiko.SSHException.__init__(self, hostname, key)
+    self.hostname = hostname
+    self.key = key
+
+  def __str__(self):
+    msg = "Unknown host key for server '{}': got '{}'"
+    return msg.format(
+        self.hostname,
+        self.key.get_base64(),
+    )
+
+AddNewHostKey = paramiko.AutoAddPolicy
+
+
+class RejectNewHostKey(paramiko.MissingHostKeyPolicy):
+
+  def missing_host_key(self, client, hostname, key):
+    raise UnknownHostKeyException(hostname, key)
+
+
+class IgnoreNewHostKey(paramiko.MissingHostKeyPolicy):
+
+  def missing_host_key(self, client, hostname, key):
+    log.warning("Unknown %s host key for %s: %s", key.get_name(), hostname, hexlify(key.get_fingerprint()))
+
+
+HOST_KEY_POLICY = {
+  "ask": RejectNewHostKey,
+  "ignore_new": IgnoreNewHostKey,
+  "ignore_all": IgnoreNewHostKey,
+  "auto_add": AddNewHostKey
+}
 
 
 
@@ -23,7 +61,8 @@ class rMConnect(QRunnable):
 
   _exception = None
 
-  def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=1, onConnect=None, onError=None, insecure_auto_add_host=False, **kwargs):
+  def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=1,
+               onConnect=None, onError=None, host_key_policy=None, known_hosts=None, **kwargs):
     super(rMConnect, self).__init__()
     self.address = address
     self.signals = rMConnectSignals()
@@ -31,13 +70,23 @@ class rMConnect(QRunnable):
       self.signals.onConnect.connect(onConnect)
     if callable(onError):
       self.signals.onError.connect(onError)
-    # self.key = key
+
     try:
       self.client = paramiko.SSHClient()
-      if insecure_auto_add_host:
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-      else:
-        self.client.load_system_host_keys()
+
+      if host_key_policy != "ignore_all":
+        if known_hosts and os.path.isfile(known_hosts):
+          self.client.load_host_keys(known_hosts)
+          log.info("LOADED %s", known_hosts)
+        else:
+          # ideally we would want to always load the system ones
+          # and have the local keys have precedence, but paramiko gives
+          # always precedence to system keys
+          self.client.load_system_host_keys()
+
+
+      policy = HOST_KEY_POLICY.get(host_key_policy, RejectNewHostKey)
+      self.client.set_missing_host_key_policy(policy())
 
       if key is not None:
         key = os.path.expanduser(key)
@@ -59,7 +108,6 @@ class rMConnect(QRunnable):
         'password': password,
         'pkey': pkey,
         'timeout': timeout,
-        'look_for_keys': False
       }
     except Exception as e:
       self._exception = e

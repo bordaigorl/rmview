@@ -105,15 +105,15 @@ All the settings are optional.
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
 
-| Parameter                | Values                                 | Comments                              |
-| ------------------------ | -------------------------------------- | ------------------------------------- |
-| `address`                | IP of remarkable                       | tool prompts for it if missing        |
-| `auth_method`            | Either `"password"` or `"key"`         | defaults to password if key not given |
-| `username`               | Username for ssh access on reMarkable  | default: `"root"`                     |
-| `password`               | Password provided by reMarkable        | not needed if key provided            |
-| `key`                    | Local path to key for ssh              | not needed if password provided       |
-| `timeout`                | Connection timeout in seconds          | default: 1                            |
-| `insecure_auto_add_host` | Ignores the check on the fingerprint   | default: `false`                      |
+| Parameter         | Values                                                  | Comments                              |
+| ----------------- | ------------------------------------------------------- | ------------------------------------- |
+| `address`         | IP of remarkable                                        | tool prompts for it if missing        |
+| `auth_method`     | Either `"password"` or `"key"`                          | defaults to password if key not given |
+| `username`        | Username for ssh access on reMarkable                   | default: `"root"`                     |
+| `password`        | Password provided by reMarkable                         | not needed if key provided            |
+| `key`             | Local path to key for ssh                               | not needed if password provided       |
+| `timeout`         | Connection timeout in seconds                           | default: 1                            |
+| `host_key_policy` | `"ask"`, `"ignore_new"`, `"ignore_all"`, `"auto_add"`   | default: `"ask"` (description below)  |
 
 The `address` parameter can be either:
 - a single string, in which case the address is used for connection
@@ -124,17 +124,24 @@ To establish a connection with the tablet, you can use any of the following:
 - Specify `"auth_method": "key"` to use a SSH key. In case an SSH key hasn't already been associated with the tablet, you can provide its path with the `key` setting.
 - Provide a `password` in settings
 
-
 If `auth_method` is `password` but no password is specified, then the tool will ask for the password on connection.
 
+As a security measure, the keys used by known hosts are checked at each connection to prevent man-in-the-middle attacks.
+The first time you connect to the tablet, it will not be among the known hosts.
+In this situation rMview will present the option to add it to the known hosts, which should be done in a trusted network.
+Updates to the tablet's firmware modify the key used by it, so the next connection would see the mismatch between the old key and the new.
+Again rMview would prompt the user in this case with the option to update the key. Again this should be done in a trusted network.
+The `host_key_policy` parameter controls this behaviour:
+- `"ask"` is the default behaviour and prompts the user with a choice when the host key is unknown or not matching.
+- `"ignore_new"` ignores unknown keys but reports mismatches.
+- `"ignore_all"` ignores both unknown and not matching keys. Use at your own risk.
+- `"auto_add"`  adds unknown keys without prompting but reports mismatches.
 
-:warning: **Connecting after an update:**
-An update to the reMarkable tablet would change its "fingerprint" i.e. the identifier that signals we are connecting to the expected device (and not somebody impersonating it).
-When this happens you may get an error message upon connection.
-There are two main ways to fix this:
- 1. Change your `~/.ssh/known_hosts` file to match the new fingerprint (you can get instructions by connecting manually via ssh).
- 2. Set the `insecure_auto_add_host` setting to `true`, which will make rmview ignore the check.
-    This is not recommended unless you are in a trusted network.
+The old `"insecure_auto_add_host": true` parameter is deprecated and equivalent to `"ignore_all"`.
+
+In case your `~/.ssh/known_hosts` file contains the relevant key associations, rMview should pick them up.
+If you use the "Add/Update" feature when prompted by rMview (for example after a tablet update) then `~/.ssh/known_hosts` will be ignored from then on.
+
 
 :warning: **Key format error:**
 If you get an error when connect using a key, but the key seems ok when connecting manually with ssh, you probably need to convert the key to the PEM format (or re-generate it using the `-m PEM` option of `ssh-keygen`). See [here](https://github.com/paramiko/paramiko/issues/340#issuecomment-492448662) for details.
