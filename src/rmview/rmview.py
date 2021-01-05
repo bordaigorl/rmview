@@ -181,7 +181,7 @@ class rMViewApp(QApplication):
       log.warning("The 'insecure_auto_add_host' setting is deprecated, see documentation.")
       self.config['ssh']['host_key_policy'] = "ignore_all"
 
-    if self.config['ssh']['host_key_policy'] == "auto_add":
+    if self.config['ssh'].get('host_key_policy') == "auto_add":
       if not os.path.isfile(self.LOCAL_KNOWN_HOSTS):
         open(self.LOCAL_KNOWN_HOSTS, 'a').close()
 
