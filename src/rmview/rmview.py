@@ -351,7 +351,7 @@ class rMViewApp(QApplication):
 
     confpath = os.path.abspath(self.config_file or self.DEFAULT_CONFIG)
     if not os.path.isfile(confpath):
-      os.makedirs(os.path.dirname(confpath))
+      os.makedirs(os.path.dirname(confpath), exist_ok=True)
       with open(confpath, "w") as f:
         json.dump({
             "ssh": {"address": [self.config['ssh'].get('address', "10.11.99.1")]},
