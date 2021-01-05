@@ -18,10 +18,9 @@
 > If you use [`rm2fb`](https://github.com/ddvk/remarkable2-framebuffer) there are known compatibilities issues that are [being addressed](https://github.com/pl-semiotics/rM-vnc-server/issues/5).
 
 
-> :loudspeaker: **Volunteers needed**: if you have experience with producing binary bundles with pyQt, and feel like contributing to the project, drop me a line!
 
-
-Check the [releases page](https://github.com/bordaigorl/rmview/releases) for executable bundles.
+The most efficient installation method is the semi-automatic one below, which requires a Python3 installation.
+If you are looking for a standalone executable, check the [releases page](https://github.com/bordaigorl/rmview/releases) for executable bundles.
 If there is no bundle for your operating system then follow the installation instructions below.
 
 
@@ -130,7 +129,7 @@ As a security measure, the keys used by known hosts are checked at each connecti
 The first time you connect to the tablet, it will not be among the known hosts.
 In this situation rMview will present the option to add it to the known hosts, which should be done in a trusted network.
 Updates to the tablet's firmware modify the key used by it, so the next connection would see the mismatch between the old key and the new.
-Again rMview would prompt the user in this case with the option to update the key. Again this should be done in a trusted network.
+Again rMview would prompt the user in this case with the option to update the key. This should be done in a trusted network.
 The `host_key_policy` parameter controls this behaviour:
 - `"ask"` is the default behaviour and prompts the user with a choice when the host key is unknown or not matching.
 - `"ignore_new"` ignores unknown keys but reports mismatches.
