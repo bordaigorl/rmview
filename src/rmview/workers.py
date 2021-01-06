@@ -102,8 +102,6 @@ class FrameBufferWorker(QRunnable):
   @pyqtSlot()
   def run(self):
     try:
-      _,out,_ = self.ssh.exec_command("/sbin/insmod $HOME/mxc_epdc_fb_damage.ko")
-      log.debug("Insmod returned %d", out.channel.recv_exit_status())
       _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server-standalone")
       log.info(next(out))
     except Exception as e:
