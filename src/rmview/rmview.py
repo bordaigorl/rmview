@@ -75,14 +75,22 @@ class rMViewApp(QApplication):
     self.viewer = QtImageViewer()
     if 'background_color' in self.config:
       self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
+
     act = QAction('Clone current frame', self)
     act.triggered.connect(self.cloneViewer)
-    # self.viewer.menu.addSeparator()
     self.viewer.menu.addAction(act)
-
+    ###
+    self.viewer.menu.addSeparator() # --------------------------
+    ###
     act = QAction('Settings...', self)
     act.triggered.connect(self.openSettings)
-    self.viewer.menu.addSeparator()
+    self.viewer.menu.addAction(act)
+    ###
+    self.viewer.menu.addSeparator() # --------------------------
+    ###
+    act = QAction('Quit', self)
+    act.setShortcut('Ctrl+Q')
+    act.triggered.connect(self.quit)
     self.viewer.menu.addAction(act)
 
     self.viewer.setWindowTitle("rMview")
