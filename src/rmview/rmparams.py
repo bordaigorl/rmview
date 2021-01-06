@@ -20,3 +20,6 @@ e_code_stylus_proximity = 320
 
 stylus_width = 15725
 stylus_height = 20951
+
+ratio_width, ratio_height = WIDTH / stylus_width, HEIGHT / stylus_height
+scaling = ratio_width if ratio_width > ratio_height else ratio_height

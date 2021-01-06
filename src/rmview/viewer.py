@@ -1,8 +1,33 @@
-import struct
+import os
+from struct import pack
 
+import numpy as np
 from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QWindow, QImage, QPixmap, QTransform, QPainter
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QFileDialog, QAction, QMenu
+from bidict import bidict
+
+from .rmparams import *
+
+types = bidict(sync=0, tool=1, abs=3)
+
+tool_code = bidict(pen=320, rubber=321, touch=330, stylus=331, stylus2=332)
+tool_val = bidict(enter=1, exit=0)
+
+abs_code = bidict(xpos=0, ypos=1, pressure=24, dist=25, xtilt=26, ytilt=27)
+
+
+def map_horiz_to_stylus(x):
+    return int(round(x / scaling + (stylus_width - WIDTH / scaling) / 2))
+
+    x * stylus_width
+    return int(round(x))
+
+
+def map_vert_to_stylus(y):
+    y = -(y / scaling - stylus_height + (stylus_height - HEIGHT / scaling) / 2)
+    return int(round(y))
+    return int(round(stylus_width - (y / HEIGHT * stylus_height)))
 
 
 class QtImageViewer(QGraphicsView):
@@ -198,41 +223,107 @@ class QtImageViewer(QGraphicsView):
         self.rotate(self._rotation)
 
     def mousePressEvent(self, event):
-        from .rmparams import HEIGHT
 
         pos = self.mapToScene(event.pos())
-        x = int(pos.x())
-        y = int(pos.y())
+        x = pos.x()
+        y = pos.y()
 
-        key = bytearray(8)
+        self.pressedpos = np.array((x, y))
+        key = 1
         cmd = b''
-        cmd += struct.pack('<8sHHi', key, 3, 57, 526)
-        cmd += struct.pack('<8sHHi', key, 3, 53, x)
-        cmd += struct.pack('<8sHHi', key, 3, 54, HEIGHT - y)
-        cmd += struct.pack('<8sHHi', key, 0, 0, 0)
+        # cmd += struct.pack('<8sHHi', key, 3, 57, 526)
+        # cmd += struct.pack('<8sHHi', key, 3, 53, x)
+        # cmd += struct.pack('<8sHHi', key, 3, 54, HEIGHT - y)
+        # cmd += struct.pack('<8sHHi', key, 0, 0, 0)
+
+        # pen enter position pressure 0 dist 1 tilt 0,0
+        cmd += pack('<qHHi', key, types['tool'], tool_code['pen'], tool_val['enter'])
+        cmd += pack('<qHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
+        cmd += pack('<qHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
+        cmd += pack('<qHHi', key, types['abs'], abs_code['pressure'], 0)
+        cmd += pack('<qHHi', key, types['abs'], abs_code['dist'], 40)
+        cmd += pack('<qHHi', key, types['abs'], abs_code['xtilt'], 0)
+        cmd += pack('<qHHi', key, types['abs'], abs_code['ytilt'], 0)
+        cmd += pack('<qHHi', key, types['sync'], 0, 0)
+
+        key += 1
+        # touch enter position pressure 1000 dist 0 tilt 0,0
+        cmd += pack('<qHHi', key, types['tool'], tool_code['touch'], tool_val['enter'])
+        cmd += pack('<qHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
+        cmd += pack('<qHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
+        cmd += pack('<qHHi', key, types['abs'], abs_code['pressure'], 4000)
+        cmd += pack('<qHHi', key, types['abs'], abs_code['dist'], 0)
+        cmd += pack('<qHHi', key, types['abs'], abs_code['xtilt'], 0)
+        cmd += pack('<qHHi', key, types['abs'], abs_code['ytilt'], 0)
+        cmd += pack('<qHHi', key, types['sync'], 0, 0)
 
         ftp = self.ssh.open_sftp()
-        file = ftp.file('/dev/input/event2', "a", -1)
+        file = ftp.file('/dev/input/event1', "a", -1)
+        file.write(cmd)
+        file.flush()
+        ftp.close()
+
+    def mouseMoveEvent(self, event):
+        pos = self.mapToScene(event.pos())
+        to_ = np.array((pos.x(), pos.y()))
+        from_ = self.pressedpos
+        # to_ is the next from
+        self.pressedpos = to_
+
+        # only draw 2/3 of the line, beause otherwise it overshoots
+        x, y = from_ + 2 / 3 * (to_ - from_)
+
+        key = os.urandom(8)
+        cmd = b''
+        cmd += pack('<qHHi', key, types['tool'], tool_code['touch'], tool_val['enter'])
+        cmd += pack('<8sHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
+        cmd += pack('<8sHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
+        cmd += pack('<8sHHi', key, types['sync'], 0, 0)
+
+        ftp = self.ssh.open_sftp()
+        file = ftp.file('/dev/input/event1', "a", -1)
         file.write(cmd)
         file.flush()
         ftp.close()
 
     def mouseReleaseEvent(self, event):
-        from .rmparams import HEIGHT
 
         pos = self.mapToScene(event.pos())
-        x = int(pos.x())
-        y = int(pos.y())
+        to_ = np.array((pos.x(), pos.y()))
+        from_ = self.pressedpos
 
-        key = bytearray(8)
+        # only draw 2/3 of the line, beause otherwise it overshoots
+        x, y = from_ + 2 / 3 * (to_ - from_)
+
+        key = 4
         cmd = b''
-        cmd += struct.pack('<8sHHi', key, 3, 57, -1)
-        cmd += struct.pack('<8sHHi', key, 3, 53, x)
-        cmd += struct.pack('<8sHHi', key, 3, 54, HEIGHT - y)
-        cmd += struct.pack('<8sHHi', key, 0, 0, 0)
+        # cmd += struct.pack('<8sHHi', key, 3, 57, -1)
+        # cmd += struct.pack('<8sHHi', key, 3, 53, x)
+        # cmd += struct.pack('<8sHHi', key, 3, 54, HEIGHT - y)
+        # cmd += struct.pack('<8sHHi', key, 0, 0, 0)
+        key += 1
+        # touch exit position pressure 0 dist 1
+        cmd += pack('<qHHi', key, types['tool'], tool_code['touch'], tool_val['enter'])
+        cmd += pack('<qHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
+        cmd += pack('<qHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
+        cmd += pack('<qHHi', key, types['sync'], 0, 0)
+
+        key += 1
+        # touch exit position pressure 0 dist 1
+        cmd += pack('<qHHi', key, types['tool'], tool_code['touch'], tool_val['exit'])
+        cmd += pack('<qHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
+        cmd += pack('<qHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
+        cmd += pack('<qHHi', key, types['abs'], abs_code['pressure'], 0)
+        cmd += pack('<qHHi', key, types['abs'], abs_code['dist'], 1)
+        cmd += pack('<qHHi', key, types['sync'], 0, 0)
+
+        key += 1
+        # pen exit
+        cmd += pack('<qHHi', key, types['tool'], tool_code['pen'], tool_val['exit'])
+        cmd += pack('<qHHi', key, types['sync'], 0, 0)
 
         ftp = self.ssh.open_sftp()
-        file = ftp.file('/dev/input/event2', "a", -1)
+        file = ftp.file('/dev/input/event1', "a", -1)
         file.write(cmd)
         file.flush()
         ftp.close()
