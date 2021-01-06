@@ -43,10 +43,11 @@ class rMViewApp(QApplication):
     self.LOCAL_KNOWN_HOSTS = os.path.join(self.CONFIG_DIR, 'rmview_known_hosts')
 
     config_files = [] if len(args) < 2 else [args[1]]
-    config_files += ['rmview.json', self.DEFAULT_CONFIG]
+    config_files += ['rmview.json']
     rmview_conf = os.environ.get("RMVIEW_CONF")
     if rmview_conf is not None:
         config_files += [rmview_conf]
+    config_files += [self.DEFAULT_CONFIG]
     log.info("Searching configuration in " + ', '.join(config_files))
     for f in config_files:
       try:
