@@ -229,53 +229,69 @@ class QtImageViewer(QGraphicsView):
         y = pos.y()
 
         self.pressedpos = np.array((x, y))
-        key = 1
+        key = os.urandom(8)
         cmd = b''
-        # cmd += struct.pack('<8sHHi', key, 3, 57, 526)
-        # cmd += struct.pack('<8sHHi', key, 3, 53, x)
-        # cmd += struct.pack('<8sHHi', key, 3, 54, HEIGHT - y)
-        # cmd += struct.pack('<8sHHi', key, 0, 0, 0)
 
-        # pen enter position pressure 0 dist 1 tilt 0,0
-        cmd += pack('<qHHi', key, types['tool'], tool_code['pen'], tool_val['enter'])
-        cmd += pack('<qHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
-        cmd += pack('<qHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
-        cmd += pack('<qHHi', key, types['abs'], abs_code['pressure'], 0)
-        cmd += pack('<qHHi', key, types['abs'], abs_code['dist'], 40)
-        cmd += pack('<qHHi', key, types['abs'], abs_code['xtilt'], 0)
-        cmd += pack('<qHHi', key, types['abs'], abs_code['ytilt'], 0)
-        cmd += pack('<qHHi', key, types['sync'], 0, 0)
+        if event.modifiers() == Qt.NoModifier:
 
-        key += 1
-        # touch enter position pressure 1000 dist 0 tilt 0,0
-        cmd += pack('<qHHi', key, types['tool'], tool_code['touch'], tool_val['enter'])
-        cmd += pack('<qHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
-        cmd += pack('<qHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
-        cmd += pack('<qHHi', key, types['abs'], abs_code['pressure'], 4000)
-        cmd += pack('<qHHi', key, types['abs'], abs_code['dist'], 0)
-        cmd += pack('<qHHi', key, types['abs'], abs_code['xtilt'], 0)
-        cmd += pack('<qHHi', key, types['abs'], abs_code['ytilt'], 0)
-        cmd += pack('<qHHi', key, types['sync'], 0, 0)
+            cmd += pack('<8sHHi', key, 3, 57, 526)
+            cmd += pack('<8sHHi', key, 3, 53, int(x))
+            cmd += pack('<8sHHi', key, 3, 54, int(HEIGHT - y))
+            cmd += pack('<8sHHi', key, 0, 0, 0)
 
-        ftp = self.ssh.open_sftp()
-        file = ftp.file('/dev/input/event1', "a", -1)
-        file.write(cmd)
-        file.flush()
-        ftp.close()
+            ftp = self.ssh.open_sftp()
+            file = ftp.file('/dev/input/event2', "a", -1)
+            file.write(cmd)
+            file.flush()
+            ftp.close()
+
+        else:
+
+            # pen enter position pressure 0 dist 1 tilt 0,0
+            cmd += pack('<8sHHi', key, types['tool'], tool_code['pen'], tool_val['enter'])
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['pressure'], 0)
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['dist'], 40)
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['xtilt'], 0)
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['ytilt'], 0)
+            cmd += pack('<8sHHi', key, types['sync'], 0, 0)
+
+            key = os.urandom(8)
+            # touch enter position pressure 1000 dist 0 tilt 0,0
+            cmd += pack('<8sHHi', key, types['tool'], tool_code['touch'], tool_val['enter'])
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['pressure'], 4000)
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['dist'], 0)
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['xtilt'], 0)
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['ytilt'], 0)
+            cmd += pack('<8sHHi', key, types['sync'], 0, 0)
+
+            ftp = self.ssh.open_sftp()
+            file = ftp.file('/dev/input/event1', "a", -1)
+            file.write(cmd)
+            file.flush()
+            ftp.close()
 
     def mouseMoveEvent(self, event):
+
+        # TODO: enabling this function sometimes causes overshooting of the drawn line. disabling it solves the issue.
+        # this is some how related to the 2/3 overdrawing already accounted for
+        if event.modifiers() == Qt.NoModifier:
+            return
         pos = self.mapToScene(event.pos())
         to_ = np.array((pos.x(), pos.y()))
         from_ = self.pressedpos
+
+        # only draw 2/3 of the line, beause otherwise it overshoots
+        x, y = to_ = from_ + 2 / 3 * (to_ - from_)
         # to_ is the next from
         self.pressedpos = to_
 
-        # only draw 2/3 of the line, beause otherwise it overshoots
-        x, y = from_ + 2 / 3 * (to_ - from_)
-
         key = os.urandom(8)
         cmd = b''
-        cmd += pack('<qHHi', key, types['tool'], tool_code['touch'], tool_val['enter'])
+        cmd += pack('<8sHHi', key, types['tool'], tool_code['touch'], tool_val['enter'])
         cmd += pack('<8sHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
         cmd += pack('<8sHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
         cmd += pack('<8sHHi', key, types['sync'], 0, 0)
@@ -287,46 +303,55 @@ class QtImageViewer(QGraphicsView):
         ftp.close()
 
     def mouseReleaseEvent(self, event):
-
         pos = self.mapToScene(event.pos())
         to_ = np.array((pos.x(), pos.y()))
         from_ = self.pressedpos
 
-        # only draw 2/3 of the line, beause otherwise it overshoots
-        x, y = from_ + 2 / 3 * (to_ - from_)
-
-        key = 4
+        key = os.urandom(8)
         cmd = b''
-        # cmd += struct.pack('<8sHHi', key, 3, 57, -1)
-        # cmd += struct.pack('<8sHHi', key, 3, 53, x)
-        # cmd += struct.pack('<8sHHi', key, 3, 54, HEIGHT - y)
-        # cmd += struct.pack('<8sHHi', key, 0, 0, 0)
-        key += 1
-        # touch exit position pressure 0 dist 1
-        cmd += pack('<qHHi', key, types['tool'], tool_code['touch'], tool_val['enter'])
-        cmd += pack('<qHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
-        cmd += pack('<qHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
-        cmd += pack('<qHHi', key, types['sync'], 0, 0)
+        if event.modifiers() == Qt.NoModifier:
+            # emulate touch
+            x, y = to_
+            cmd += pack('<8sHHi', key, 3, 57, -1)
+            cmd += pack('<8sHHi', key, 3, 53, int(x))
+            cmd += pack('<8sHHi', key, 3, 54, int(HEIGHT - y))
+            cmd += pack('<8sHHi', key, 0, 0, 0)
 
-        key += 1
-        # touch exit position pressure 0 dist 1
-        cmd += pack('<qHHi', key, types['tool'], tool_code['touch'], tool_val['exit'])
-        cmd += pack('<qHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
-        cmd += pack('<qHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
-        cmd += pack('<qHHi', key, types['abs'], abs_code['pressure'], 0)
-        cmd += pack('<qHHi', key, types['abs'], abs_code['dist'], 1)
-        cmd += pack('<qHHi', key, types['sync'], 0, 0)
+            ftp = self.ssh.open_sftp()
+            file = ftp.file('/dev/input/event2', "a", -1)
+            file.write(cmd)
+            file.flush()
+            ftp.close()
+        else:
+            # emulate stylus
+            # only draw 2/3 of the line, beause otherwise it overshoots
+            x, y = from_ + 2 / 3 * (to_ - from_)
 
-        key += 1
-        # pen exit
-        cmd += pack('<qHHi', key, types['tool'], tool_code['pen'], tool_val['exit'])
-        cmd += pack('<qHHi', key, types['sync'], 0, 0)
+            # touch exit position pressure 0 dist 1
+            cmd += pack('<8sHHi', key, types['tool'], tool_code['touch'], tool_val['enter'])
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
+            cmd += pack('<8sHHi', key, types['sync'], 0, 0)
 
-        ftp = self.ssh.open_sftp()
-        file = ftp.file('/dev/input/event1', "a", -1)
-        file.write(cmd)
-        file.flush()
-        ftp.close()
+            key = os.urandom(8)
+            # touch exit position pressure 0 dist 1
+            cmd += pack('<8sHHi', key, types['tool'], tool_code['touch'], tool_val['exit'])
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['xpos'], map_vert_to_stylus(y))
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['ypos'], map_horiz_to_stylus(x))
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['pressure'], 0)
+            cmd += pack('<8sHHi', key, types['abs'], abs_code['dist'], 1)
+            cmd += pack('<8sHHi', key, types['sync'], 0, 0)
+
+            key = os.urandom(8)
+            # pen exit
+            cmd += pack('<8sHHi', key, types['tool'], tool_code['pen'], tool_val['exit'])
+            cmd += pack('<8sHHi', key, types['sync'], 0, 0)
+
+            ftp = self.ssh.open_sftp()
+            file = ftp.file('/dev/input/event1', "a", -1)
+            file.write(cmd)
+            file.flush()
+            ftp.close()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Left:
