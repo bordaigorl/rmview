@@ -200,4 +200,3 @@ class PointerWorker(QRunnable):
           self.signals.onPenNear.emit()
 
 
-
