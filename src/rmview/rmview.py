@@ -129,16 +129,16 @@ class rMViewApp(QApplication):
     self.viewer.setWindowTitle("rMview")
     self.viewer.show()
 
-    self.orient = None
+    self.orient = 0
     orient = self.config.get('orientation', 'landscape')
     if orient == 'landscape':
       self.viewer.rotateCW()
       self.autoResize(WIDTH / HEIGHT)
     elif orient == 'portrait':
       self.autoResize(HEIGHT / WIDTH)
-    else: # orient
+    else: # auto
       self.autoResize(HEIGHT / WIDTH)
-      self.orient = True
+      self.orient = 1 if orient == "auto_on_load" else 2
 
     # # Setup global menu
     # menu = self.bar.addMenu('&View')
@@ -336,9 +336,10 @@ class rMViewApp(QApplication):
 
   @pyqtSlot(QImage)
   def onNewFrame(self, image):
-    if self.orient:
+    if self.orient > 0:
       self.detectOrientation(image)
-      self.orient = False
+      if self.orient == 1:
+        self.orient = 0
     self.viewer.setImage(image)
 
   @pyqtSlot()
