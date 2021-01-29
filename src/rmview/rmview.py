@@ -156,6 +156,8 @@ class rMViewApp(QApplication):
        self.autoResize(WIDTH / HEIGHT)
 
   def autoResize(self, ratio):
+    if self.viewer.windowState() & (QWindow.FullScreen | QWindow.Maximized):
+      return
     dg = self.desktop().availableGeometry(self.viewer)
     ds = dg.size() * 0.7
     if ds.width() * ratio > ds.height():
