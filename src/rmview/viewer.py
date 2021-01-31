@@ -1,9 +1,14 @@
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
 from PyQt5.QtGui import QWindow, QImage, QPixmap, QTransform, QIcon
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QFileDialog, QAction, QMenu
+from PyQt5.QtWidgets import *
 
 
 class QtImageViewer(QGraphicsView):
+
+  pointerEvent = pyqtSignal(int, int, int)
+  _button = 0
+  keyLeft = pyqtSignal()
+  keyRight = pyqtSignal()
 
   zoomInFactor = 1.25
   zoomOutFactor = 1 / zoomInFactor
@@ -107,6 +112,24 @@ class QtImageViewer(QGraphicsView):
   def resizeEvent(self, event):
     self.updateViewer()
 
+  def mousePressEvent(self, event):
+    scenePos = self.mapToScene(event.pos())
+    if int(event.modifiers()) & int(Qt.ShiftModifier):
+      self._button = 1
+    else:
+      self._button = 4
+    self.pointerEvent.emit(scenePos.x(), scenePos.y(), self._button)
+
+  def mouseReleaseEvent(self, event):
+    scenePos = self.mapToScene(event.pos())
+    self._button = 0
+    self.pointerEvent.emit(scenePos.x(), scenePos.y(), 0)
+
+  def mouseMoveEvent(self, event):
+    if self._button > 0:
+      scenePos = self.mapToScene(event.pos())
+      self.pointerEvent.emit(scenePos.x(), scenePos.y(), self._button)
+
   def mouseDoubleClickEvent(self, event):
     # scenePos = self.mapToScene(event.pos())
     if event.button() == Qt.LeftButton:
@@ -198,9 +221,9 @@ class QtImageViewer(QGraphicsView):
 
   def keyPressEvent(self, event):
     if event.key() == Qt.Key_Left:
-      self.rotateCCW()
+      self.keyLeft.emit()
     elif event.key() == Qt.Key_Right:
-      self.rotateCW()
+      self.keyRight.emit()
     elif event.key() == Qt.Key_F:
       self.setFit(True)
     elif event.key() == Qt.Key_1:

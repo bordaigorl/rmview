@@ -14,7 +14,7 @@ import logging
 
 
 from twisted.internet.protocol import Protocol
-from twisted.internet import protocol, reactor
+from twisted.internet import protocol, reactor, threads
 from twisted.application import internet, service
 
 from .rfb import *
@@ -36,15 +36,22 @@ class RFB(RFBClient):
   img = QImage(WIDTH, HEIGHT, IMG_FORMAT)
   painter = QPainter(img)
 
+  def __init__(self, signals):
+    super(RFB, self).__init__()
+    self.signals = signals
+
+  def emitImage(self):
+    self.signals.onNewFrame.emit(self.img)
+
   def vncConnectionMade(self):
-    self.signals = self.factory.signals
+    # self.signals = self.factory.signals
     self.setEncodings([
       HEXTILE_ENCODING,
       CORRE_ENCODING,
       PSEUDO_CURSOR_ENCODING,
       RRE_ENCODING,
       RAW_ENCODING ])
-    time.sleep(.1) # get first image without artifacts
+    # time.sleep(.1) # get first image without artifacts
     self.framebufferUpdateRequest()
 
   def sendPassword(self, password):
@@ -61,10 +68,16 @@ class RFB(RFBClient):
 
 class RFBFactory(RFBFactory):
   protocol = RFB
+  instance = None
 
   def __init__(self, signals):
     super(RFBFactory, self).__init__()
     self.signals = signals
+
+  def buildProtocol(self, addr):
+    self.instance = RFB(self.signals)
+    self.instance.factory = self
+    return self.instance
 
   def clientConnectionLost(self, connector, reason):
     log.warning("Connection lost: %s", reason.getErrorMessage())
@@ -78,6 +91,8 @@ class RFBFactory(RFBFactory):
 class FrameBufferWorker(QRunnable):
 
   _stop = False
+  vncClient = None
+  ignoreEvents = False
 
   def __init__(self, ssh, delay=None, lz4_path=None, img_format=IMG_FORMAT):
     super(FrameBufferWorker, self).__init__()
@@ -89,7 +104,10 @@ class FrameBufferWorker(QRunnable):
   def stop(self):
     self._stop = True
     log.info("Stopping framebuffer thread...")
-    reactor.callFromThread(reactor.stop)
+    try:
+      self.vncClient.disconnect()
+    except Exception:
+      reactor.callFromThread(reactor.stop)
     try:
       self.ssh.exec_command("killall rM-vnc-server-standalone", timeout=3)
     except Exception as e:
@@ -110,11 +128,38 @@ class FrameBufferWorker(QRunnable):
     while self._stop == False:
       log.info("Starting VNC server")
       try:
-        self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBFactory(self.signals))
-        self.vncClient.startService()
+        self.factory = RFBFactory(self.signals)
+        self.vncClient = reactor.connectTCP(self.ssh.hostname, 5900, self.factory)
         reactor.run(installSignalHandlers=0)
       except Exception as e:
         log.error(e)
+
+  @pyqtSlot()
+  def pause(self):
+    self.ignoreEvents = True
+    self.signals.blockSignals(True)
+
+  @pyqtSlot()
+  def resume(self):
+    self.ignoreEvents = False
+    self.signals.blockSignals(False)
+    try:
+      self.factory.instance.emitImage()
+    except Exception:
+      log.warning("Not ready to pause")
+
+  # @pyqtSlot(int,int,int)
+  def pointerEvent(self, x, y, button):
+    if self.ignoreEvents: return
+    try:
+      reactor.callFromThread(self.factory.instance.pointerEvent, x, y, button)
+    except Exception as e:
+      log.warning("Not ready to send pointer events! [%s]", e)
+
+  def keyEvent(self, key):
+    if self.ignoreEvents: return
+    reactor.callFromThread(self.factory.instance.keyEvent, key)
+    reactor.callFromThread(self.factory.instance.keyEvent, key, 0)
 
 
 class PWSignals(QObject):
@@ -139,6 +184,14 @@ class PointerWorker(QRunnable):
     self.ssh = ssh
     self.threshold = threshold
     self.signals = PWSignals()
+
+  @pyqtSlot()
+  def pause(self):
+    self.signals.blockSignals(True)
+
+  @pyqtSlot()
+  def resume(self):
+    self.signals.blockSignals(False)
 
   def stop(self):
     self._penkill.write('\n')

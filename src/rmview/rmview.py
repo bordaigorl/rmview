@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 from . import resources
-from .workers import FrameBufferWorker, PointerWorker
+from .workers import FrameBufferWorker, PointerWorker, KEY_Left, KEY_Right
 from .connection import rMConnect, RejectNewHostKey, AddNewHostKey, UnknownHostKeyException
 from .viewer import QtImageViewer
 
@@ -30,6 +30,8 @@ class rMViewApp(QApplication):
   fbworker = None
   penworker = None
   ssh = None
+
+  streaming = True
 
   pen = None
   pen_size = 15
@@ -80,6 +82,11 @@ class rMViewApp(QApplication):
     act.triggered.connect(self.cloneViewer)
     self.viewer.menu.addAction(act)
     ###
+    self.pauseMenu = act = QAction('Pause Streaming', self)
+    act.setShortcut('Ctrl+P')
+    act.triggered.connect(self.toggleStreaming)
+    self.viewer.menu.addAction(act)
+    ###
     self.viewer.menu.addSeparator() # --------------------------
     ###
     act = QAction('Settings...', self)
@@ -122,6 +129,8 @@ class rMViewApp(QApplication):
     act.setShortcut('Ctrl+S')
     act.triggered.connect(self.viewer.screenshot)
     menu.addAction(act)
+    menu.addSeparator()
+    menu.addAction(self.pauseMenu)
     menu.addSeparator()
 
 
@@ -224,7 +233,7 @@ class rMViewApp(QApplication):
   @pyqtSlot(object)
   def connected(self, ssh):
     self.ssh = ssh
-    self.viewer.setWindowTitle("rMview - " + self.config.get('ssh').get('address'))
+    self.viewer.setWindowTitle("rMview - " + ssh.hostname)
 
     _,out,_ = ssh.exec_command("cat /sys/devices/soc0/machine")
     rmv = out.read().decode("utf-8")
@@ -287,6 +296,12 @@ class rMViewApp(QApplication):
     self.fbworker.signals.onNewFrame.connect(self.onNewFrame)
     self.fbworker.signals.onFatalError.connect(self.frameError)
     self.threadpool.start(self.fbworker)
+    if self.config.get("forward_mouse_events", True):
+      self.viewer.pointerEvent.connect(self.fbworker.pointerEvent)
+    if self.config.get("forward_key_events", True):
+      self.viewer.keyLeft.connect(lambda: self.fbworker.keyEvent(KEY_Left))
+      self.viewer.keyRight.connect(lambda: self.fbworker.keyEvent(KEY_Right))
+
 
     self.penworker = PointerWorker(ssh, path="/dev/input/event%d" % (version-1))
     self.threadpool.start(self.penworker)
@@ -346,6 +361,21 @@ class rMViewApp(QApplication):
     v = QtImageViewer()
     v.setImage(img)
     v.show()
+
+  @pyqtSlot()
+  def toggleStreaming(self):
+    if self.streaming:
+      self.fbworker.pause()
+      self.penworker.pause()
+      self.streaming = False
+      self.pauseMenu.setText("Resume Streaming")
+      self.viewer.setWindowTitle("rMview - " + self.ssh.hostname + " [PAUSED]")
+    else:
+      self.fbworker.resume()
+      self.penworker.resume()
+      self.streaming = True
+      self.pauseMenu.setText("Pause Streaming")
+      self.viewer.setWindowTitle("rMview - " + self.ssh.hostname)
 
   @pyqtSlot()
   def openSettings(self, prompt=True):
