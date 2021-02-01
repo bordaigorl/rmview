@@ -186,11 +186,17 @@ class QtImageViewer(QGraphicsView):
         img = img.transformed(QTransform().rotate(self._rotation))
         img.save(fileName)
 
+  def is_landscape(self):
+    return self._rotation == 90
+
   def landscape(self):
     self.resetTransform()
     self.rotate(90)
     self._rotation = 90
     self.updateViewer()
+
+  def is_portrait(self):
+    return self._rotation == 0
 
   def portrait(self):
     self.resetTransform()

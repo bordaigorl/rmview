@@ -32,6 +32,7 @@ class rMViewApp(QApplication):
   ssh = None
 
   streaming = True
+  right_mode = True
 
   pen = None
   pen_size = 15
@@ -70,6 +71,7 @@ class rMViewApp(QApplication):
     self.trailPen.setJoinStyle(Qt.RoundJoin)
     self.trailDelay = self.config.get('pen_trail', 200)
     self.trail = None if self.trailDelay == 0 else False
+    self.right_mode = self.config.get('right_mode', True)
 
     self.bar = QMenuBar()
     self.setWindowIcon(QIcon(':/assets/rmview.svg'))
@@ -162,26 +164,21 @@ class rMViewApp(QApplication):
     self.requestConnect()
 
   def detectOrientation(self, image):
-    c = image.pixel
-    portrait = False
-    # print(c(48, 47) , c(72, 72) , c(55, 55) , c(64, 65))
-    if c(48, 47) == 4278190080 and  c(72, 72) == 4278190080 and \
-       (c(55, 55) == 4294967295 or c(64, 65) == 4294967295):
-       if c(61, 1812) != 4278190080 or c(5,5) == 4278190080:
-         portrait = True
-    elif c(1356, 47) == 4278190080 and c(1329, 72) == 4278190080 and \
-       (c(1348, 54) == 4294967295 or c(1336, 65) == 4294967295):
-      portrait = True
-    elif c(5,5) == 4278190080:
-      portrait = True
-    elif c(40,47) == 4278190080 and c(40,119) == 4278190080:
-      portrait = True
-    if portrait:
-       self.viewer.portrait()
-       self.autoResize(HEIGHT / WIDTH)
+    (tl,bl,tr) = find_circle_buttons(image)
+    if tl is None and bl is None and tr is None:
+      portrait = True # We are in the main screen/settings
+    elif bl is None:
+      portrait = self.right_mode
     else:
-       self.viewer.landscape()
-       self.autoResize(WIDTH / HEIGHT)
+      portrait = False
+
+    if portrait:
+      if not self.viewer.is_portrait():
+        self.viewer.portrait()
+        self.autoResize(HEIGHT / WIDTH)
+    elif not self.viewer.is_landscape():
+        self.viewer.landscape()
+        self.autoResize(WIDTH / HEIGHT)
 
   def autoResize(self, ratio):
     if self.viewer.windowState() & (QWindow.FullScreen | QWindow.Maximized):
