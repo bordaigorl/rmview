@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 from . import resources
-from .workers import FrameBufferWorker, PointerWorker, KEY_Left, KEY_Right
+from .workers import FrameBufferWorker, PointerWorker, KEY_Left, KEY_Right, KEY_Escape
 from .connection import rMConnect, RejectNewHostKey, AddNewHostKey, UnknownHostKeyException
 from .viewer import QtImageViewer
 
@@ -117,11 +117,11 @@ class rMViewApp(QApplication):
     # Setup global menu
     menu = self.bar.addMenu('&View')
     act = QAction('Rotate clockwise', self)
-    act.setShortcut('Ctrl+Right')
+    act.setShortcut('Ctrl+R')
     act.triggered.connect(self.viewer.rotateCW)
     menu.addAction(act)
     act = QAction('Rotate counter-clockwise', self)
-    act.setShortcut('Ctrl+Left')
+    act.setShortcut('Ctrl+L')
     act.triggered.connect(self.viewer.rotateCCW)
     menu.addAction(act)
     menu.addSeparator()
@@ -131,7 +131,18 @@ class rMViewApp(QApplication):
     menu.addAction(act)
     menu.addSeparator()
     menu.addAction(self.pauseMenu)
-    menu.addSeparator()
+    act = QAction('Emulate Left Button', self)
+    act.setShortcut('Ctrl+Left')
+    act.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Left))
+    menu.addAction(act)
+    act = QAction('Emulate Right Button', self)
+    act.setShortcut('Ctrl+Right')
+    act.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Right))
+    menu.addAction(act)
+    act = QAction('Emulate Central Button', self)
+    act.setShortcut('Ctrl+Esc')
+    act.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Escape))
+    menu.addAction(act)
 
 
     if not self.ensureConnConfig(): # I know, it's ugly
@@ -298,10 +309,6 @@ class rMViewApp(QApplication):
     self.threadpool.start(self.fbworker)
     if self.config.get("forward_mouse_events", True):
       self.viewer.pointerEvent.connect(self.fbworker.pointerEvent)
-    if self.config.get("forward_key_events", True):
-      self.viewer.keyLeft.connect(lambda: self.fbworker.keyEvent(KEY_Left))
-      self.viewer.keyRight.connect(lambda: self.fbworker.keyEvent(KEY_Right))
-
 
     self.penworker = PointerWorker(ssh, path="/dev/input/event%d" % (version-1))
     self.threadpool.start(self.penworker)

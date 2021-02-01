@@ -7,8 +7,6 @@ class QtImageViewer(QGraphicsView):
 
   pointerEvent = pyqtSignal(int, int, int)
   _button = 0
-  keyLeft = pyqtSignal()
-  keyRight = pyqtSignal()
 
   zoomInFactor = 1.25
   zoomOutFactor = 1 / zoomInFactor
@@ -114,7 +112,7 @@ class QtImageViewer(QGraphicsView):
 
   def mousePressEvent(self, event):
     scenePos = self.mapToScene(event.pos())
-    if int(event.modifiers()) & int(Qt.ShiftModifier):
+    if int(event.modifiers()) & int(Qt.ControlModifier):
       self._button = 1
     else:
       self._button = 4
@@ -220,11 +218,7 @@ class QtImageViewer(QGraphicsView):
     self.rotate(self._rotation)
 
   def keyPressEvent(self, event):
-    if event.key() == Qt.Key_Left:
-      self.keyLeft.emit()
-    elif event.key() == Qt.Key_Right:
-      self.keyRight.emit()
-    elif event.key() == Qt.Key_F:
+    if event.key() == Qt.Key_F:
       self.setFit(True)
     elif event.key() == Qt.Key_1:
       self.actualSize()
