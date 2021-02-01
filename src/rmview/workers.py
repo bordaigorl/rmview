@@ -81,7 +81,7 @@ class RFBFactory(RFBFactory):
 
   def clientConnectionLost(self, connector, reason):
     log.warning("Connection lost: %s", reason.getErrorMessage())
-    connector.connect()
+    reactor.callFromThread(reactor.stop)
 
   def clientConnectionFailed(self, connector, reason):
     self.signals.onFatalError.emit(Exception("Connection failed: " + str(reason)))
@@ -109,7 +109,7 @@ class FrameBufferWorker(QRunnable):
     except Exception:
       reactor.callFromThread(reactor.stop)
     try:
-      self.ssh.exec_command("killall rM-vnc-server-standalone", timeout=3)
+      self.ssh.exec_command("killall -SIGINT rM-vnc-server-standalone")
     except Exception as e:
       log.warning("VNC could not be stopped on the reMarkable.")
       log.warning("Although this is not a big problem, it may consume some resources until you restart the tablet.")
@@ -120,13 +120,15 @@ class FrameBufferWorker(QRunnable):
   @pyqtSlot()
   def run(self):
     try:
+      log.info("Starting VNC server")
       _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server-standalone")
       log.info(next(out))
     except Exception as e:
       self.signals.onFatalError.emit(e)
+      return
 
     while self._stop == False:
-      log.info("Starting VNC server")
+      log.info("Connecting to VNC server")
       try:
         self.factory = RFBFactory(self.signals)
         self.vncClient = reactor.connectTCP(self.ssh.hostname, 5900, self.factory)
