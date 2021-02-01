@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
-from PyQt5.QtGui import QWindow, QImage, QPixmap, QTransform, QIcon
+from PyQt5.QtGui import QWindow, QImage, QPixmap, QTransform, QIcon, QKeySequence
 from PyQt5.QtWidgets import *
 
 
@@ -24,39 +24,53 @@ class QtImageViewer(QGraphicsView):
     self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
     self.setAlignment(Qt.AlignCenter)
 
+    ### ACTIONS
+    self.fitAction = QAction('Fit to view', self, checkable=True)
+    self.fitAction.setShortcut("Ctrl+0")
+    self.fitAction.triggered.connect(lambda: self.setFit(True))
+    self.addAction(self.fitAction)
+    ###
+    self.actualSizeAction = QAction('Actual Size', self)
+    self.actualSizeAction.setShortcut("Ctrl+1")
+    self.actualSizeAction.triggered.connect(lambda: self.actualSize())
+    self.addAction(self.actualSizeAction)
+    ###
+    self.zoomInAction = QAction('Zoom In', self)
+    self.zoomInAction.setShortcut(QKeySequence.ZoomIn)
+    self.zoomInAction.triggered.connect(self.zoomIn)
+    self.addAction(self.zoomInAction)
+    ###
+    self.zoomOutAction = QAction('Zoom Out', self)
+    self.zoomOutAction.setShortcut(QKeySequence.ZoomOut)
+    self.zoomOutAction.triggered.connect(self.zoomOut)
+    self.addAction(self.zoomOutAction)
+    ###
+    self.rotCWAction = QAction('Rotate clockwise', self)
+    self.rotCWAction.setShortcut("Ctrl+R")
+    self.rotCWAction.triggered.connect(self.rotateCW)
+    self.addAction(self.rotCWAction)
+    ###
+    self.rotCCWAction = QAction('Rotate counter-clockwise', self)
+    self.rotCCWAction.setShortcut("Ctrl+L")
+    self.rotCCWAction.triggered.connect(self.rotateCCW)
+    self.addAction(self.rotCCWAction)
+    ###
+    self.screenshotAction = QAction('Save screenshot', self)
+    self.screenshotAction.setShortcut(QKeySequence.Save)
+    self.screenshotAction.triggered.connect(self.screenshot)
+    self.addAction(self.screenshotAction)
+    ###
+
     self.menu = QMenu(self)
-    act = QAction('Fit to view', self, checkable=True)
-    self.fitAction = act
-    act.triggered.connect(lambda: self.setFit(True))
-    self.menu.addAction(act)
-    ###
-    act = QAction('Actual Size', self)
-    act.triggered.connect(lambda: self.actualSize())
-    self.menu.addAction(act)
-    ###
-    act = QAction('Zoom In', self)
-    act.triggered.connect(self.zoomIn)
-    self.menu.addAction(act)
-    ###
-    act = QAction('Zoom Out', self)
-    act.triggered.connect(self.zoomOut)
-    self.menu.addAction(act)
-    ###
+    self.menu.addAction(self.fitAction)
+    self.menu.addAction(self.actualSizeAction)
+    self.menu.addAction(self.zoomInAction)
+    self.menu.addAction(self.zoomOutAction)
     self.menu.addSeparator() # --------------------------
-    ###
-    act = QAction('Rotate clockwise', self)
-    act.triggered.connect(self.rotateCW)
-    self.menu.addAction(act)
-    ###
-    act = QAction('Rotate counter-clockwise', self)
-    act.triggered.connect(self.rotateCCW)
-    self.menu.addAction(act)
-    ###
+    self.menu.addAction(self.rotCWAction)
+    self.menu.addAction(self.rotCCWAction)
     self.menu.addSeparator() # --------------------------
-    ###
-    act = QAction('Save screenshot', self)
-    act.triggered.connect(self.screenshot)
-    self.menu.addAction(act)
+    self.menu.addAction(self.screenshotAction)
 
     self._fit = True
     self._rotation = 0 # used to produce a rotated screenshot

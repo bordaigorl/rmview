@@ -78,27 +78,53 @@ class rMViewApp(QApplication):
     if 'background_color' in self.config:
       self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
 
-    act = QAction('Clone current frame', self)
-    act.triggered.connect(self.cloneViewer)
-    self.viewer.menu.addAction(act)
+    ### ACTIONS
+    self.cloneAction = QAction('Clone current frame', self.viewer)
+    self.cloneAction.setShortcut(QKeySequence.New)
+    self.cloneAction.triggered.connect(self.cloneViewer)
+    self.viewer.addAction(self.cloneAction)
     ###
-    self.pauseMenu = act = QAction('Pause Streaming', self)
-    act.setShortcut('Ctrl+P')
-    act.triggered.connect(self.toggleStreaming)
-    self.viewer.menu.addAction(act)
+    self.pauseAction = QAction('Pause Streaming', self.viewer)
+    self.pauseAction.setShortcut('Ctrl+P')
+    self.pauseAction.triggered.connect(self.toggleStreaming)
+    self.viewer.addAction(self.pauseAction)
     ###
+    self.settingsAction = QAction('Settings...', self.viewer)
+    self.settingsAction.triggered.connect(self.openSettings)
+    self.viewer.addAction(self.settingsAction)
+    ###
+    self.quitAction = QAction('Quit', self.viewer)
+    self.quitAction.setShortcut('Ctrl+Q')
+    self.quitAction.triggered.connect(self.quit)
+    self.viewer.addAction(self.quitAction)
+    ###
+    self.leftAction = QAction('Emulate Left Button', self)
+    self.leftAction.setShortcut('Ctrl+Left')
+    self.leftAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Left))
+    self.viewer.addAction(self.leftAction)
+    ###
+    self.rightAction = QAction('Emulate Right Button', self)
+    self.rightAction.setShortcut('Ctrl+Right')
+    self.rightAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Right))
+    self.viewer.addAction(self.rightAction)
+    ###
+    self.homeAction = QAction('Emulate Central Button', self)
+    self.homeAction.setShortcut(QKeySequence.Cancel)
+    self.homeAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Escape))
+    self.viewer.addAction(self.homeAction)
+
+
+    ### VIEWER MENU ADDITIONS
+    self.viewer.menu.addAction(self.cloneAction)
+    self.viewer.menu.addAction(self.pauseAction)
+    # inputMenu = self.viewer.menu.addMenu("Input")
+    # inputMenu.addAction(self.leftAction)
+    # inputMenu.addAction(self.rightAction)
+    # inputMenu.addAction(self.homeAction)
     self.viewer.menu.addSeparator() # --------------------------
-    ###
-    act = QAction('Settings...', self)
-    act.triggered.connect(self.openSettings)
-    self.viewer.menu.addAction(act)
-    ###
+    self.viewer.menu.addAction(self.settingsAction)
     self.viewer.menu.addSeparator() # --------------------------
-    ###
-    act = QAction('Quit', self)
-    act.setShortcut('Ctrl+Q')
-    act.triggered.connect(self.quit)
-    self.viewer.menu.addAction(act)
+    self.viewer.menu.addAction(self.quitAction)
 
     self.viewer.setWindowTitle("rMview")
     self.viewer.show()
@@ -114,35 +140,17 @@ class rMViewApp(QApplication):
       self.autoResize(HEIGHT / WIDTH)
       self.orient = True
 
-    # Setup global menu
-    menu = self.bar.addMenu('&View')
-    act = QAction('Rotate clockwise', self)
-    act.setShortcut('Ctrl+R')
-    act.triggered.connect(self.viewer.rotateCW)
-    menu.addAction(act)
-    act = QAction('Rotate counter-clockwise', self)
-    act.setShortcut('Ctrl+L')
-    act.triggered.connect(self.viewer.rotateCCW)
-    menu.addAction(act)
-    menu.addSeparator()
-    act = QAction('Save screenshot', self)
-    act.setShortcut('Ctrl+S')
-    act.triggered.connect(self.viewer.screenshot)
-    menu.addAction(act)
-    menu.addSeparator()
-    menu.addAction(self.pauseMenu)
-    act = QAction('Emulate Left Button', self)
-    act.setShortcut('Ctrl+Left')
-    act.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Left))
-    menu.addAction(act)
-    act = QAction('Emulate Right Button', self)
-    act.setShortcut('Ctrl+Right')
-    act.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Right))
-    menu.addAction(act)
-    act = QAction('Emulate Central Button', self)
-    act.setShortcut('Ctrl+Esc')
-    act.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Escape))
-    menu.addAction(act)
+    # # Setup global menu
+    # menu = self.bar.addMenu('&View')
+    # menu.addAction(self.viewer.rotCWAction)
+    # menu.addAction(self.viewer.rotCCWAction)
+    # menu.addSeparator()
+    # menu.addAction(self.viewer.screenshotAction)
+    # menu.addSeparator()
+    # menu.addAction(self.pauseAction)
+    # menu.addAction(self.leftAction)
+    # menu.addAction(self.rightAction)
+    # menu.addAction(self.homeAction)
 
 
     if not self.ensureConnConfig(): # I know, it's ugly
@@ -375,13 +383,13 @@ class rMViewApp(QApplication):
       self.fbworker.pause()
       self.penworker.pause()
       self.streaming = False
-      self.pauseMenu.setText("Resume Streaming")
+      self.pauseAction.setText("Resume Streaming")
       self.viewer.setWindowTitle("rMview - " + self.ssh.hostname + " [PAUSED]")
     else:
       self.fbworker.resume()
       self.penworker.resume()
       self.streaming = True
-      self.pauseMenu.setText("Pause Streaming")
+      self.pauseAction.setText("Pause Streaming")
       self.viewer.setWindowTitle("rMview - " + self.ssh.hostname)
 
   @pyqtSlot()
