@@ -105,7 +105,7 @@ class FrameBufferWorker(QRunnable):
     self._stop = True
     log.info("Stopping framebuffer thread...")
     try:
-      self.vncClient.disconnect()
+      reactor.callFromThread(self.vncClient.disconnect)
     except Exception:
       reactor.callFromThread(reactor.stop)
     try:
@@ -160,8 +160,12 @@ class FrameBufferWorker(QRunnable):
 
   def keyEvent(self, key):
     if self.ignoreEvents: return
-    reactor.callFromThread(self.factory.instance.keyEvent, key)
-    reactor.callFromThread(self.factory.instance.keyEvent, key, 0)
+    reactor.callFromThread(self.emulatePressRelease, key)
+
+  def emulatePressRelease(self, key):
+    self.factory.instance.keyEvent(key)
+    # time.sleep(.1)
+    self.factory.instance.keyEvent(key, 0)
 
 
 class PWSignals(QObject):
