@@ -15,6 +15,7 @@ import sys
 import os
 import json
 import re
+import time
 
 import logging
 logging.basicConfig(format='%(message)s')
@@ -320,6 +321,8 @@ class rMViewApp(QApplication):
     self.pen = self.viewer.scene.addEllipse(0,0,self.pen_size,self.pen_size,
                                             pen=QPen(QColor('white')),
                                             brush=QBrush(QColor(self.config.get('pen_color', 'red'))))
+    self.pen.lastShown = None
+    self.pen.showDelay = self.config.get("pen_show_delay", 0.4)
     self.pen.hide()
     self.pen.setZValue(100)
     self.penworker.signals.onPenMove.connect(self.movePen)
@@ -327,7 +330,7 @@ class rMViewApp(QApplication):
       self.penworker.signals.onPenLift.connect(self.showPen)
     if self.config.get("hide_pen_on_press", True):
         self.penworker.signals.onPenPress.connect(self.hidePen)
-    self.penworker.signals.onPenNear.connect(self.showPen)
+    self.penworker.signals.onPenNear.connect(self.showPenNow)
     self.penworker.signals.onPenFar.connect(self.hidePen)
 
 
@@ -343,12 +346,21 @@ class rMViewApp(QApplication):
   def hidePen(self):
     if self.trail is not None:
       self.trail = False
+    self.pen.lastShown = None
     self.pen.hide()
 
   @pyqtSlot()
   def showPen(self):
     if self.trail is not None:
       self.trail = False
+    self.pen.lastShown = time.perf_counter()
+    # self.pen.show()
+
+  @pyqtSlot()
+  def showPenNow(self):
+    if self.trail is not None:
+      self.trail = False
+    self.pen.lastShown = None
     self.pen.show()
 
   @pyqtSlot(int, int)
@@ -367,6 +379,10 @@ class rMViewApp(QApplication):
         QTimer.singleShot(self.trailDelay // 2, lambda: t.setOpacity(.5))
         QTimer.singleShot(self.trailDelay, lambda: self.viewer.scene.removeItem(t))
     self.pen.setRect(x - (self.pen_size // 2), y - (self.pen_size // 2), self.pen_size, self.pen_size)
+    if self.pen.lastShown is not None:
+      if time.perf_counter() - self.pen.lastShown > self.pen.showDelay:
+        self.pen.show()
+        self.pen.lastShown = None
 
   @pyqtSlot()
   def cloneViewer(self):
