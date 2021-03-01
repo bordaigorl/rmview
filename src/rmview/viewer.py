@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
-from PyQt5.QtGui import QWindow, QImage, QPixmap, QTransform, QIcon, QKeySequence
+from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 
@@ -14,6 +14,9 @@ class QtImageViewer(QGraphicsView):
   def __init__(self):
     QGraphicsView.__init__(self)
     # self.setAttribute(Qt.WA_OpaquePaintEvent, True)
+
+    self.setRenderHint(QPainter.Antialiasing)
+    self.setRenderHint(QPainter.SmoothPixmapTransform)
 
     self.scene = QGraphicsScene()
     self.setScene(self.scene)
