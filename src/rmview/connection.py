@@ -60,6 +60,7 @@ class rMConnectSignals(QObject):
 class rMConnect(QRunnable):
 
   _exception = None
+  _known_hosts = None
 
   def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=1,
                onConnect=None, onError=None, host_key_policy=None, known_hosts=None, **kwargs):
@@ -75,15 +76,12 @@ class rMConnect(QRunnable):
       self.client = paramiko.SSHClient()
 
       if host_key_policy != "ignore_all":
+        self.client.load_system_host_keys()
+        self._known_hosts = known_hosts
         if known_hosts and os.path.isfile(known_hosts):
-          self.client.load_host_keys(known_hosts)
+          self.client.load_system_host_keys(known_hosts)
+          self.client.load_host_keys(known_hosts) # to preserve them when saving
           log.info("LOADED %s", known_hosts)
-        else:
-          # ideally we would want to always load the system ones
-          # and have the local keys have precedence, but paramiko gives
-          # always precedence to system keys
-          self.client.load_system_host_keys()
-
 
       policy = HOST_KEY_POLICY.get(host_key_policy, RejectNewHostKey)
       self.client.set_missing_host_key_policy(policy())
@@ -128,6 +126,11 @@ class rMConnect(QRunnable):
       log.error("Could not connect to %s: %s", self.address, e)
       log.info("Please check your remarkable is connected and retry.")
       self.signals.onError.emit(e)
+    try:
+      if self._known_hosts:
+        self.client.save_host_keys(self._known_hosts)
+    except Exception as e:
+      log.warning("Could not save known keys at '%s'" % self._known_hosts)
     log.debug('Stopping connection worker')
 
 
