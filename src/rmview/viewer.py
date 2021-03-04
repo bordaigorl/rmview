@@ -13,7 +13,7 @@ class QtImageViewer(QGraphicsView):
 
   def __init__(self):
     QGraphicsView.__init__(self)
-    # self.setAttribute(Qt.WA_OpaquePaintEvent, True)
+    self.setFrameStyle(QFrame.NoFrame)
 
     self.setRenderHint(QPainter.Antialiasing)
     self.setRenderHint(QPainter.SmoothPixmapTransform)
