@@ -76,14 +76,17 @@ class rMConnect(QRunnable):
 
       if host_key_policy != "ignore_all":
         if known_hosts and os.path.isfile(known_hosts):
+          log.info("Using known hosts file: %s" % (known_hosts))
           self.client.load_host_keys(known_hosts)
           log.info("LOADED %s", known_hosts)
         else:
+          log.info("Using system default known hosts file")
           # ideally we would want to always load the system ones
           # and have the local keys have precedence, but paramiko gives
           # always precedence to system keys
+          # There is extremly slow in system with many known host entries... :/
+          # See https://github.com/paramiko/paramiko/issues/191
           self.client.load_system_host_keys()
-
 
       policy = HOST_KEY_POLICY.get(host_key_policy, RejectNewHostKey)
       self.client.set_missing_host_key_policy(policy())

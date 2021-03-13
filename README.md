@@ -145,6 +145,18 @@ If you use the "Add/Update" feature when prompted by rMview (for example after a
 :warning: **Key format error:**
 If you get an error when connect using a key, but the key seems ok when connecting manually with ssh, you probably need to convert the key to the PEM format (or re-generate it using the `-m PEM` option of `ssh-keygen`). See [here](https://github.com/paramiko/paramiko/issues/340#issuecomment-492448662) for details.
 
+NOTE: If you have a lot of known hosts in system known hosts file (`~/.ssh/known_hosts`), you are advised to add
+known host entry for remarkable to `~/.config/rmview_known_hosts` because paramiko can be very slow when loading
+large known hosts file which slows down the whole connection routine.
+
+If your user system known hosts file already contains entry for remarkable, you can add it to rmview specific
+hosts file using this command:
+
+```bash
+cat ~/.ssh/known_hosts | grep 10.11.99.1 >> ~/.config/rmview_known_hosts
+```
+
+You should of course replace IP with your remarkable IP.
 
 ## To Do
 

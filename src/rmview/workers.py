@@ -101,6 +101,7 @@ class FrameBufferWorker(QRunnable):
 
   @pyqtSlot()
   def run(self):
+    log.info("Starting VNC server")
     try:
       _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server-standalone")
       log.info(next(out))
@@ -108,7 +109,7 @@ class FrameBufferWorker(QRunnable):
       self.signals.onFatalError.emit(e)
 
     while self._stop == False:
-      log.info("Starting VNC server")
+      log.info("Establishing connection to remote VNC server")
       try:
         self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBFactory(self.signals))
         self.vncClient.startService()
