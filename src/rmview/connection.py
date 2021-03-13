@@ -61,7 +61,7 @@ class rMConnect(QRunnable):
 
   _exception = None
 
-  def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=1,
+  def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=3,
                onConnect=None, onError=None, host_key_policy=None, known_hosts=None, **kwargs):
     super(rMConnect, self).__init__()
     self.address = address
