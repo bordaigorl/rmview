@@ -90,14 +90,19 @@ class rMConnect(QRunnable):
 
       if key is not None:
         key = os.path.expanduser(key)
-        try:
-          pkey = paramiko.RSAKey.from_private_key_file(key)
-        except paramiko.ssh_exception.PasswordRequiredException:
-          passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:", QLineEdit.Password)
-          if ok:
-            pkey = paramiko.RSAKey.from_private_key_file(key, password=passphrase)
-          else:
-            raise Exception("A passphrase for SSH key is required")
+
+        if password:
+            # password protected key file, password provided in the config
+            pkey = paramiko.RSAKey.from_private_key_file(key, password=password)
+        else:
+            try:
+                pkey = paramiko.RSAKey.from_private_key_file(key)
+            except paramiko.ssh_exception.PasswordRequiredException:
+                passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:", QLineEdit.Password)
+                if ok:
+                    pkey = paramiko.RSAKey.from_private_key_file(key, password=passphrase)
+                else:
+                    raise Exception("A passphrase for SSH key is required")
       else:
         pkey = None
         if password is None:
