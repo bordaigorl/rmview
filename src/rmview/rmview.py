@@ -15,6 +15,7 @@ import sys
 import os
 import json
 import re
+import copy
 
 import logging
 logging.basicConfig(format='%(message)s')
@@ -194,7 +195,11 @@ class rMViewApp(QApplication):
       if not os.path.isfile(self.LOCAL_KNOWN_HOSTS):
         open(self.LOCAL_KNOWN_HOSTS, 'a').close()
 
-    log.info(self.config)
+    config_sanitized = copy.deepcopy(self.config)
+    if "password" in self.config.get("ssh", {}):
+        config_sanitized["ssh"]["password"] = config_sanitized["ssh"]["password"][:3] + "*****"
+
+    log.info(config_sanitized)
     return True
 
   def requestConnect(self, host_key_policy=None):
