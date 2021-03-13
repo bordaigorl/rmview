@@ -16,6 +16,7 @@ import os
 import json
 import re
 import copy
+import signal
 
 import logging
 logging.basicConfig(format='%(message)s')
@@ -199,7 +200,7 @@ class rMViewApp(QApplication):
     if "password" in self.config.get("ssh", {}):
         config_sanitized["ssh"]["password"] = config_sanitized["ssh"]["password"][:3] + "*****"
 
-    log.info(config_sanitized)
+    log.info("Config values: %s" % (str(config_sanitized)))
     return True
 
   def requestConnect(self, host_key_policy=None):
@@ -451,10 +452,18 @@ class rMViewApp(QApplication):
     QMessageBox.critical(self.viewer, "Error", 'Please check your reMarkable is properly configured, see the documentation for instructions.\n\n%s' % e)
     self.quit()
 
+  def event(self, e):
+    return QApplication.event(self, e)
+
 def rmViewMain():
   log.setLevel(logging.INFO)
   QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-  ecode = rMViewApp(sys.argv).exec_()
+  app = rMViewApp(sys.argv)
+  # We register custom signal handler so we can gracefuly stop app with CTRL+C when QT main loop is
+  # running
+  signal.signal(signal.SIGINT, lambda *args: app.quit())
+  app.startTimer(500)
+  ecode = app.exec_()
   print('\nBye!')
   sys.exit(ecode)
 
