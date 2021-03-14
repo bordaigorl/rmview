@@ -190,6 +190,7 @@ class FrameBufferWorker(QRunnable):
         remote_bind_address=("127.0.0.1", 5900),
         # We don't specify port so library auto assigns random unused one in the high range
         local_bind_address=('127.0.0.1',),
+        compression=self.ssh_config.get("tunnel_compression", True),
         **open_tunnel_kwargs)
 
       return tunnel
