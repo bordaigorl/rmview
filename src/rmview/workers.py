@@ -38,6 +38,8 @@ class RFB(RFBClient):
   painter = QPainter(img)
 
   def vncConnectionMade(self):
+    log.info("Connection to VNC server has been established")
+
     self.signals = self.factory.signals
     self.setEncodings([
       HEXTILE_ENCODING,
@@ -161,7 +163,7 @@ class FrameBufferWorker(QRunnable):
         vnc_server_port = 5900
 
     while not self._stop:
-        log.info("Establishing connection to remote VNC server to %s:%s" % (vnc_server_host,
+        log.info("Establishing connection to remote VNC server on %s:%s" % (vnc_server_host,
                                                                             vnc_server_port))
         try:
             self.vncClient = internet.TCPClient(vnc_server_host, vnc_server_port, RFBFactory(self.signals))
