@@ -64,64 +64,84 @@ class rMConnect(QRunnable):
   def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=3,
                onConnect=None, onError=None, host_key_policy=None, known_hosts=None, **kwargs):
     super(rMConnect, self).__init__()
+
     self.address = address
+    self.username = username
+    self.password = password
+    self.key = key
+    self.timeout = timeout
+    self.host_key_policy = host_key_policy
+    self.known_hosts = known_hosts
+
     self.signals = rMConnectSignals()
+
+    self.client = None
+    self._exception = None
+
     if callable(onConnect):
       self.signals.onConnect.connect(onConnect)
     if callable(onError):
       self.signals.onError.connect(onError)
 
+  def _initialize(self):
+    # NOTE: Loading system known hosts can take a long time that's why it should happen inside
+    # run() so it doesn't block main qt rendere loop
     try:
       self.client = paramiko.SSHClient()
 
-      if host_key_policy != "ignore_all":
-        if known_hosts and os.path.isfile(known_hosts):
-          log.info("Using known hosts file: %s" % (known_hosts))
-          self.client.load_host_keys(known_hosts)
-          log.info("LOADED %s", known_hosts)
+      if self.host_key_policy != "ignore_all":
+        if self.known_hosts and os.path.isfile(self.known_hosts):
+          log.info("Using known hosts file: %s" % (self.known_hosts))
+          self.client.load_host_keys(self.known_hosts)
+          log.info("Loaded known hosts from %s", self.known_hosts)
         else:
           log.info("Using system default known hosts file")
+          log.info("Loading system default known hosts file, this may take a while...")
           # ideally we would want to always load the system ones
           # and have the local keys have precedence, but paramiko gives
           # always precedence to system keys
           # There is extremly slow in system with many known host entries... :/
           # See https://github.com/paramiko/paramiko/issues/191
           self.client.load_system_host_keys()
+          log.info("System default known host file loaded")
 
-      policy = HOST_KEY_POLICY.get(host_key_policy, RejectNewHostKey)
+      policy = HOST_KEY_POLICY.get(self.host_key_policy, RejectNewHostKey)
       self.client.set_missing_host_key_policy(policy())
 
-      if key is not None:
-        key = os.path.expanduser(key)
+      if self.key is not None:
+        key = os.path.expanduser(self.key)
 
-        if password:
+        if self.password:
             # password protected key file, password provided in the config
-            pkey = paramiko.RSAKey.from_private_key_file(key, password=password)
+            pkey = paramiko.RSAKey.from_private_key_file(key, password=self.password)
         else:
             try:
-                pkey = paramiko.RSAKey.from_private_key_file(key)
+                pkey = paramiko.RSAKey.from_private_key_file(self.key)
             except paramiko.ssh_exception.PasswordRequiredException:
-                passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:", QLineEdit.Password)
+                passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:",
+                                                      QLineEdit.Password)
                 if ok:
-                    pkey = paramiko.RSAKey.from_private_key_file(key, password=passphrase)
+                    pkey = paramiko.RSAKey.from_private_key_file(self.key, password=passphrase)
                 else:
                     raise Exception("A passphrase for SSH key is required")
       else:
         pkey = None
-        if password is None:
+        if self.password is None:
           log.warning("No key nor password given. System-wide SSH connection parameters are going to be used.")
 
       self.options = {
-        'username': username,
-        'password': password,
+        'username': self.username,
+        'password': self.password,
         'pkey': pkey,
-        'timeout': timeout,
+        'timeout': self.timeout,
       }
     except Exception as e:
       self._exception = e
 
   @pyqtSlot()
   def run(self):
+    self._initialize()
+
     if self._exception is not None:
       self.signals.onError.emit(self._exception)
       log.debug('Aborting connection: %s', self._exception)
