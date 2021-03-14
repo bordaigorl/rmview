@@ -75,6 +75,7 @@ class rMViewApp(QApplication):
     self.setWindowIcon(QIcon(':/assets/rmview.svg'))
 
     self.viewer = QtImageViewer()
+
     if 'background_color' in self.config:
       self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
 
@@ -97,6 +98,9 @@ class rMViewApp(QApplication):
 
     self.viewer.setWindowTitle("rMview")
     self.viewer.show()
+
+    # Display connecting image until we successfuly connect
+    self.viewer.setImage(QPixmap(':/assets/connecting.png'))
 
     self.orient = None
     orient = self.config.get('orientation', 'landscape')
