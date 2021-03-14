@@ -54,7 +54,7 @@ If you plan to modify the source code, use `pip install -e .` so that when execu
 Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted]) with `pip` or `conda` manually:
 
     # install dependencies
-    pip install pyqt5 paramiko twisted
+    pip install pyqt5 paramiko twisted sshtunnel
     # build resources file
     pyrcc5 -o src/rmview/resources.py resources.qrc
 
