@@ -85,7 +85,8 @@ class rMConnect(QRunnable):
 
   def _initialize(self):
     # NOTE: Loading system known hosts can take a long time that's why it should happen inside
-    # run() so it doesn't block main qt rendere loop
+    # run() so it doesn't block the main qt render loop which will cause main QT window to freeze
+    # until the loading completes.
     try:
       self.client = paramiko.SSHClient()
 
