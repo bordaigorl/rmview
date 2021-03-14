@@ -113,6 +113,7 @@ Connection parameters are provided as a dictionary with the following keys (all 
 | `key`             | Local path to key for ssh                               | not needed if password provided       |
 | `timeout`         | Connection timeout in seconds                           | default: 1                            |
 | `host_key_policy` | `"ask"`, `"ignore_new"`, `"ignore_all"`, `"auto_add"`   | default: `"ask"` (description below)  |
+| `tunnel`          | True to connect to VNC server over a local SSH tunnel   | default: `false` (description below)  |
 
 The `address` parameter can be either:
 - a single string, in which case the address is used for connection
@@ -121,6 +122,7 @@ The `address` parameter can be either:
 To establish a connection with the tablet, you can use any of the following:
 - Leave `auth_method`, `password` and `key` unspecified: this will ask for a password
 - Specify `"auth_method": "key"` to use a SSH key. In case an SSH key hasn't already been associated with the tablet, you can provide its path with the `key` setting.
+  If key is password protected, you can specify key passphrase using `password` parameter.
 - Provide a `password` in settings
 
 If `auth_method` is `password` but no password is specified, then the tool will ask for the password on connection.
@@ -141,7 +143,6 @@ The old `"insecure_auto_add_host": true` parameter is deprecated and equivalent 
 In case your `~/.ssh/known_hosts` file contains the relevant key associations, rMview should pick them up.
 If you use the "Add/Update" feature when prompted by rMview (for example after a tablet update) then `~/.ssh/known_hosts` will be ignored from then on.
 
-
 :warning: **Key format error:**
 If you get an error when connect using a key, but the key seems ok when connecting manually with ssh, you probably need to convert the key to the PEM format (or re-generate it using the `-m PEM` option of `ssh-keygen`). See [here](https://github.com/paramiko/paramiko/issues/340#issuecomment-492448662) for details.
 
@@ -157,6 +158,22 @@ cat ~/.ssh/known_hosts | grep 10.11.99.1 >> ~/.config/rmview_known_hosts
 ```
 
 You should of course replace IP with your remarkable IP.
+
+### Note on security and using an SSH tunnel
+
+By default, this program will start VNC server on remarkable which listens on all the interfaces and doesn't expose
+any authentication mechanism or uses encryption.
+
+This program will then connect to the VNC server over the IP specified in the config.
+
+Not using any authentication and exposing VNC server on all the network interfaces may be OK when connecting to the
+remarkable over USB interface, but when you are connecting to remarkable over WLAN, you are strongly encouraged to
+use built-in SSH tunnel functionality.
+
+When SSH tunnel functionality is used, VNC server which is started on remarkable will only listen on localhost, this
+program will create SSH tunnel to the remarkable and connect to the VNC server over the local SSH tunnel.
+
+This means that the connection will be encrypted and existing SSH authentication will be used.
 
 ## To Do
 

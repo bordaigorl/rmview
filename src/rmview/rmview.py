@@ -287,7 +287,8 @@ class rMViewApp(QApplication):
         self.openSettings(prompt=False)
         return
 
-    self.fbworker = FrameBufferWorker(ssh, delay=self.config.get('fetch_frame_delay'))
+    self.fbworker = FrameBufferWorker(ssh, ssh_config=self.config.get('ssh', {}),
+                                      delay=self.config.get('fetch_frame_delay'))
     self.fbworker.signals.onNewFrame.connect(self.onNewFrame)
     self.fbworker.signals.onFatalError.connect(self.frameError)
     self.threadpool.start(self.fbworker)

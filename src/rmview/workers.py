@@ -5,13 +5,14 @@ from PyQt5.QtCore import *
 from .rmparams import *
 
 import paramiko
+import sshtunnel
 import struct
 import time
 
 import sys
 import os
 import logging
-
+import atexit
 
 from twisted.internet.protocol import Protocol
 from twisted.internet import protocol, reactor
@@ -79,43 +80,117 @@ class FrameBufferWorker(QRunnable):
 
   _stop = False
 
-  def __init__(self, ssh, delay=None, lz4_path=None, img_format=IMG_FORMAT):
+  def __init__(self, ssh, ssh_config, delay=None, lz4_path=None, img_format=IMG_FORMAT):
     super(FrameBufferWorker, self).__init__()
     self.ssh = ssh
+    self.ssh_config = ssh_config
     self.img_format = img_format
+    self.use_ssh_tunnel = self.ssh_config.get("tunnel", False)
+
+    self.vncClient = None
+    self.sshTunnel = None
 
     self.signals = FBWSignals()
 
   def stop(self):
+    if self._stop:
+        # Already stopped
+        return
+
     self._stop = True
+
     log.info("Stopping framebuffer thread...")
     reactor.callFromThread(reactor.stop)
+
     try:
+      log.info("Stopping VNC server...")
       self.ssh.exec_command("killall rM-vnc-server-standalone", timeout=3)
     except Exception as e:
       log.warning("VNC could not be stopped on the reMarkable.")
       log.warning("Although this is not a big problem, it may consume some resources until you restart the tablet.")
       log.warning("You can manually terminate it by running `ssh %s killall rM-vnc-server-standalone`.", self.ssh.hostname)
       log.error(e)
+
+    if self.sshTunnel:
+      try:
+        log.info("Stopping SSH tunnel...")
+        self.sshTunnel.stop()
+      except Exception as e:
+        log.error(e)
+
     log.info("Framebuffer thread stopped")
 
   @pyqtSlot()
   def run(self):
-    log.info("Starting VNC server")
+    # On start up we try to kill any previous "stray" running VNC server processes
     try:
-      _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server-standalone")
-      log.info(next(out))
+      self.ssh.exec_command("killall rM-vnc-server-standalone", timeout=3)
+    except Exception:
+      pass
+
+    # If using SSH tunnel, we ensure VNC server only listens on localhost
+    if self.use_ssh_tunnel:
+      server_run_cmd = "$HOME/rM-vnc-server-standalone -listen localhost"
+    else:
+      server_run_cmd = "$HOME/rM-vnc-server-standalone"
+
+    log.info("Starting VNC server (command=%s)" % (server_run_cmd))
+
+    try:
+      _,_,out = self.ssh.exec_command(server_run_cmd)
+      log.info("Command output: %s" % (next(out)))
     except Exception as e:
       self.signals.onFatalError.emit(e)
 
-    while self._stop == False:
-      log.info("Establishing connection to remote VNC server")
-      try:
-        self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBFactory(self.signals))
-        self.vncClient.startService()
-        reactor.run(installSignalHandlers=0)
-      except Exception as e:
-        log.error(e)
+    # Register atexit handler to ensure we always try to kill started server on exit
+    atexit.register(self.stop)
+
+    if self.use_ssh_tunnel:
+        tunnel = self._get_ssh_tunnel()
+        tunnel.start()
+
+        self.sshTunnel = tunnel
+
+        log.info("Setting up SSH tunnel %s:%s <-> %s:%s" % ("127.0.0.1", 5900, tunnel.local_bind_host,
+                                                            tunnel.local_bind_port))
+
+        vnc_server_host = tunnel.local_bind_host
+        vnc_server_port = tunnel.local_bind_port
+    else:
+        vnc_server_host = self.ssh.hostname
+        vnc_server_port = 5900
+
+    while not self._stop:
+        log.info("Establishing connection to remote VNC server to %s:%s" % (vnc_server_host,
+                                                                            vnc_server_port))
+        try:
+            self.vncClient = internet.TCPClient(vnc_server_host, vnc_server_port, RFBFactory(self.signals))
+            self.vncClient.startService()
+            reactor.run(installSignalHandlers=0)
+        except Exception as e:
+            log.error("Failed to connect to the VNC server: %s" % (str(e)))
+
+  def _get_ssh_tunnel(self):
+      open_tunnel_kwargs = {
+        "ssh_username" : self.ssh_config.get("username", "root"),
+      }
+
+      if self.ssh_config.get("auth_method", "password") == "key":
+          open_tunnel_kwargs["ssh_pkey"] = self.ssh_config["key"]
+
+          if self.ssh_config.get("password", None):
+            open_tunnel_kwargs["ssh_private_key_password"] = self.ssh_config["password"]
+      else:
+        open_tunnel_kwargs["ssh_password"] = self.ssh_config["password"]
+
+      tunnel = sshtunnel.open_tunnel(
+        (self.ssh.hostname, 22),
+        remote_bind_address=("127.0.0.1", 5900),
+        # We don't specify port so library auto assigns random unused one in the high range
+        local_bind_address=('127.0.0.1',),
+        **open_tunnel_kwargs)
+
+      return tunnel
 
 
 class PWSignals(QObject):

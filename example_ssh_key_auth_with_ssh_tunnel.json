@@ -1,0 +1,17 @@
+{
+  "ssh": {
+     "timeout": 4,
+     "address": "192.168.160.100",
+     "username": "root",
+     "auth_method": "key",
+     "key": "/home/user/.ssh/id_rsa_remarkable",
+     "password": "ssh key passphrase",
+     "tunnel": true
+  },
+  "orientation": "auto",
+  "pen_size": 15,
+  "pen_color": "red",
+  "pen_trail": 200,
+  "background_color": "white",
+  "hide_pen_on_press": true
+}
