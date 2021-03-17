@@ -13,6 +13,7 @@ from .rmparams import *
 
 import sys
 import os
+import stat
 import json
 import re
 import copy
@@ -67,6 +68,9 @@ class rMViewApp(QApplication):
         log.error("Malformed configuration in %s: %s" % (f, e))
       except Exception as e:
         log.debug("Configuration failure in %s: %s" % (f, e))
+
+    self._checkConfigFilePermissions(self.config_file)
+
     self.config.setdefault('ssh', {})
     self.pen_size = self.config.get('pen_size', self.pen_size)
     self.trailPen = QPen(QColor(self.config.get('pen_color', 'red')), max(1, self.pen_size // 3))
@@ -234,6 +238,23 @@ class rMViewApp(QApplication):
 
     log.info("Config values: %s" % (str(config_sanitized)))
     return True
+
+  def _checkConfigFilePermissions(self, file_path):
+    """
+    Emit a warning message if config file is readable by others.
+    """
+    st_mode = os.stat(file_path).st_mode
+
+    if bool(st_mode & stat.S_IROTH) or bool(st_mode & stat.S_IWOTH):
+      file_permissions = str(oct(st_mode)[4:])
+
+      if file_permissions.startswith("0") and len(file_permissions) == 4:
+          file_permissions = file_permissions[1:]
+
+      log .warn("Config file \"%s\" is readable by others (permissions=%s). If you are config "
+                "file contains secrets (e.g. password) you are strongly encouraged to make sure "
+                "it's not readable by other users (chmod 600 %s)" % (file_path, file_permissions,
+                                                                     file_path))
 
   def requestConnect(self, host_key_policy=None):
     self.viewer.setWindowTitle("rMview - Connecting...")
