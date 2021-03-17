@@ -144,26 +144,38 @@ class FrameBufferWorker(QRunnable):
 
   @pyqtSlot()
   def run(self):
-    # On start up we try to kill any previous "stray" running VNC server processes
-    try:
-      self.ssh.exec_command("killall rM-vnc-server-standalone", timeout=3)
-    except Exception:
-      pass
+    # Check if an existing instance of server is running and for now if it is log a warning and
+    # try to re-use that instance
+    _, stdout, stderr = self.ssh.exec_command("ps | grep rM-vnc-server-standalone | grep -v grep",
+                                              get_pty=True, timeout=3)
 
-    # If using SSH tunnel, we ensure VNC server only listens on localhost
-    if self.use_ssh_tunnel:
-      server_run_cmd = "$HOME/rM-vnc-server-standalone -listen localhost"
+    if b"rM-vnc-server-standalone" in stdout.read():
+      # TODO: Add config option to force kill and start a fresh server in this case
+      vnc_server_already_running = True
+      log.warn("Found an existing instance of rM-vnc-server-standalone process on reMarkable. "
+                 "Will try to use that instance instead of starting a new one.")
+
+      # TODO: Warn if ssh tunnel is configured, but existing instance is not using "-listen
+      # localhost" flag, this would indicate that VNC server is listening on all interfaces which
+      # can pose a security risk
     else:
-      server_run_cmd = "$HOME/rM-vnc-server-standalone"
+      vnc_server_already_running = False
 
-    log.info("Starting VNC server (command=%s)" % (server_run_cmd))
+    if not vnc_server_already_running:
+      # If using SSH tunnel, we ensure VNC server only listens on localhost
+      if self.use_ssh_tunnel:
+        server_run_cmd = "$HOME/rM-vnc-server-standalone -listen localhost"
+      else:
+        server_run_cmd = "$HOME/rM-vnc-server-standalone"
 
-    try:
-      _,_,out = self.ssh.exec_command(server_run_cmd)
-      log.info("Start command output: %s" % (next(out)))
-    except Exception as e:
-      self.signals.onFatalError.emit(e)
-      return
+      log.info("Starting VNC server (command=%s)" % (server_run_cmd))
+
+      try:
+        _,_,out = self.ssh.exec_command(server_run_cmd)
+        log.info("Start command output: %s" % (next(out).strip()))
+      except Exception as e:
+        self.signals.onFatalError.emit(e)
+        return
 
     # Register atexit handler to ensure we always try to kill started server on exit
     atexit.register(self.stop)
@@ -174,8 +186,9 @@ class FrameBufferWorker(QRunnable):
 
         self.sshTunnel = tunnel
 
-        log.info("Setting up SSH tunnel %s:%s <-> %s:%s" % ("127.0.0.1", 5900, tunnel.local_bind_host,
-                                                            tunnel.local_bind_port))
+        log.info("Setting up SSH tunnel %s:%s (rm) <-> %s:%s (localhost)" % ("127.0.0.1", 5900,
+                                                                             tunnel.local_bind_host,
+                                                                             tunnel.local_bind_port))
 
         vnc_server_host = tunnel.local_bind_host
         vnc_server_port = tunnel.local_bind_port
