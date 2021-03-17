@@ -1,16 +1,22 @@
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
-from PyQt5.QtGui import QWindow, QImage, QPixmap, QTransform, QIcon
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QFileDialog, QAction, QMenu
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 
 class QtImageViewer(QGraphicsView):
+
+  pointerEvent = pyqtSignal(int, int, int)
+  _button = 0
 
   zoomInFactor = 1.25
   zoomOutFactor = 1 / zoomInFactor
 
   def __init__(self):
     QGraphicsView.__init__(self)
-    # self.setAttribute(Qt.WA_OpaquePaintEvent, True)
+    self.setFrameStyle(QFrame.NoFrame)
+
+    self.setRenderHint(QPainter.Antialiasing)
+    self.setRenderHint(QPainter.SmoothPixmapTransform)
 
     self.scene = QGraphicsScene()
     self.setScene(self.scene)
@@ -21,39 +27,53 @@ class QtImageViewer(QGraphicsView):
     self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
     self.setAlignment(Qt.AlignCenter)
 
+    ### ACTIONS
+    self.fitAction = QAction('Fit to view', self, checkable=True)
+    self.fitAction.setShortcut("Ctrl+0")
+    self.fitAction.triggered.connect(lambda: self.setFit(True))
+    self.addAction(self.fitAction)
+    ###
+    self.actualSizeAction = QAction('Actual Size', self)
+    self.actualSizeAction.setShortcut("Ctrl+1")
+    self.actualSizeAction.triggered.connect(lambda: self.actualSize())
+    self.addAction(self.actualSizeAction)
+    ###
+    self.zoomInAction = QAction('Zoom In', self)
+    self.zoomInAction.setShortcut(QKeySequence.ZoomIn)
+    self.zoomInAction.triggered.connect(self.zoomIn)
+    self.addAction(self.zoomInAction)
+    ###
+    self.zoomOutAction = QAction('Zoom Out', self)
+    self.zoomOutAction.setShortcut(QKeySequence.ZoomOut)
+    self.zoomOutAction.triggered.connect(self.zoomOut)
+    self.addAction(self.zoomOutAction)
+    ###
+    self.rotCWAction = QAction('Rotate clockwise', self)
+    self.rotCWAction.setShortcut("Ctrl+R")
+    self.rotCWAction.triggered.connect(self.rotateCW)
+    self.addAction(self.rotCWAction)
+    ###
+    self.rotCCWAction = QAction('Rotate counter-clockwise', self)
+    self.rotCCWAction.setShortcut("Ctrl+L")
+    self.rotCCWAction.triggered.connect(self.rotateCCW)
+    self.addAction(self.rotCCWAction)
+    ###
+    self.screenshotAction = QAction('Save screenshot', self)
+    self.screenshotAction.setShortcut(QKeySequence.Save)
+    self.screenshotAction.triggered.connect(self.screenshot)
+    self.addAction(self.screenshotAction)
+    ###
+
     self.menu = QMenu(self)
-    act = QAction('Fit to view', self, checkable=True)
-    self.fitAction = act
-    act.triggered.connect(lambda: self.setFit(True))
-    self.menu.addAction(act)
-    ###
-    act = QAction('Actual Size', self)
-    act.triggered.connect(lambda: self.actualSize())
-    self.menu.addAction(act)
-    ###
-    act = QAction('Zoom In', self)
-    act.triggered.connect(self.zoomIn)
-    self.menu.addAction(act)
-    ###
-    act = QAction('Zoom Out', self)
-    act.triggered.connect(self.zoomOut)
-    self.menu.addAction(act)
-    ###
+    self.menu.addAction(self.fitAction)
+    self.menu.addAction(self.actualSizeAction)
+    self.menu.addAction(self.zoomInAction)
+    self.menu.addAction(self.zoomOutAction)
     self.menu.addSeparator() # --------------------------
-    ###
-    act = QAction('Rotate clockwise', self)
-    act.triggered.connect(self.rotateCW)
-    self.menu.addAction(act)
-    ###
-    act = QAction('Rotate counter-clockwise', self)
-    act.triggered.connect(self.rotateCCW)
-    self.menu.addAction(act)
-    ###
+    self.menu.addAction(self.rotCWAction)
+    self.menu.addAction(self.rotCCWAction)
     self.menu.addSeparator() # --------------------------
-    ###
-    act = QAction('Save screenshot', self)
-    act.triggered.connect(self.screenshot)
-    self.menu.addAction(act)
+    self.menu.addAction(self.screenshotAction)
 
     self._fit = True
     self._rotation = 0 # used to produce a rotated screenshot
@@ -107,6 +127,24 @@ class QtImageViewer(QGraphicsView):
   def resizeEvent(self, event):
     self.updateViewer()
 
+  def mousePressEvent(self, event):
+    scenePos = self.mapToScene(event.pos())
+    if int(event.modifiers()) & int(Qt.ControlModifier):
+      self._button = 1
+    else:
+      self._button = 4
+    self.pointerEvent.emit(scenePos.x(), scenePos.y(), self._button)
+
+  def mouseReleaseEvent(self, event):
+    scenePos = self.mapToScene(event.pos())
+    self._button = 0
+    self.pointerEvent.emit(scenePos.x(), scenePos.y(), 0)
+
+  def mouseMoveEvent(self, event):
+    if self._button > 0:
+      scenePos = self.mapToScene(event.pos())
+      self.pointerEvent.emit(scenePos.x(), scenePos.y(), self._button)
+
   def mouseDoubleClickEvent(self, event):
     # scenePos = self.mapToScene(event.pos())
     if event.button() == Qt.LeftButton:
@@ -151,11 +189,17 @@ class QtImageViewer(QGraphicsView):
         img = img.transformed(QTransform().rotate(self._rotation))
         img.save(fileName)
 
+  def is_landscape(self):
+    return self._rotation == 90
+
   def landscape(self):
     self.resetTransform()
     self.rotate(90)
     self._rotation = 90
     self.updateViewer()
+
+  def is_portrait(self):
+    return self._rotation == 0
 
   def portrait(self):
     self.resetTransform()
@@ -197,11 +241,7 @@ class QtImageViewer(QGraphicsView):
     self.rotate(self._rotation)
 
   def keyPressEvent(self, event):
-    if event.key() == Qt.Key_Left:
-      self.rotateCCW()
-    elif event.key() == Qt.Key_Right:
-      self.rotateCW()
-    elif event.key() == Qt.Key_F:
+    if event.key() == Qt.Key_F:
       self.setFit(True)
     elif event.key() == Qt.Key_1:
       self.actualSize()

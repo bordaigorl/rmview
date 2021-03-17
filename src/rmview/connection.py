@@ -60,6 +60,7 @@ class rMConnectSignals(QObject):
 class rMConnect(QRunnable):
 
   _exception = None
+  _known_hosts = None
 
   def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=3,
                onConnect=None, onError=None, host_key_policy=None, known_hosts=None, **kwargs):
@@ -157,6 +158,11 @@ class rMConnect(QRunnable):
       log.error("Could not connect to %s: %s", self.address, e)
       log.info("Please check your remarkable is connected and retry.")
       self.signals.onError.emit(e)
+    try:
+      if self._known_hosts:
+        self.client.save_host_keys(self._known_hosts)
+    except Exception as e:
+      log.warning("Could not save known keys at '%s'" % self._known_hosts)
     log.debug('Stopping connection worker')
 
 
