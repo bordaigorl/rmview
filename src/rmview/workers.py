@@ -152,8 +152,8 @@ class FrameBufferWorker(QRunnable):
     if b"rM-vnc-server-standalone" in stdout.read():
       # TODO: Add config option to force kill and start a fresh server in this case
       vnc_server_already_running = True
-      log.warn("Found an existing instance of rM-vnc-server-standalone process on reMarkable. "
-                 "Will try to use that instance instead of starting a new one.")
+      log.info("Found an existing instance of rM-vnc-server-standalone process on reMarkable. "
+               "Will try to use that instance instead of starting a new one.")
 
       # TODO: Warn if ssh tunnel is configured, but existing instance is not using "-listen
       # localhost" flag, this would indicate that VNC server is listening on all interfaces which
