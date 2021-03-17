@@ -159,7 +159,6 @@ class FrameBufferWorker(QRunnable):
     log.info("Starting VNC server (command=%s)" % (server_run_cmd))
 
     try:
-      log.info("Starting VNC server")
       _,_,out = self.ssh.exec_command(server_run_cmd)
       log.info("Start command output: %s" % (next(out)))
     except Exception as e:

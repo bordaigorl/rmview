@@ -249,7 +249,7 @@ class rMViewApp(QApplication):
       file_permissions = str(oct(st_mode)[4:])
 
       if file_permissions.startswith("0") and len(file_permissions) == 4:
-          file_permissions = file_permissions[1:]
+        file_permissions = file_permissions[1:]
 
       log .warn("Config file \"%s\" is readable by others (permissions=%s). If you are config "
                 "file contains secrets (e.g. password) you are strongly encouraged to make sure "
