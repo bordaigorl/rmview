@@ -82,9 +82,10 @@ the default configuration file which you can edit according to the documentation
 
 More generally, you can invoke the program with
 
-    rmview [config]
+    rmview [-v|-q] [config]
 
-the optional `config` parameter is the filename of a json configuration file.
+The optional `-v` flag makes the console output verbose, `-q` makes it quiet (only errors).
+The optional `config` parameter is the filename of a json configuration file.
 If the parameter is not found, the program will look for a `rmview.json` file in the current directory, or, if not found, for the path stored in the environment variable `RMVIEW_CONF`.
 If none are found, or if the configuration is underspecified, the tool is going to prompt for address/password.
 
