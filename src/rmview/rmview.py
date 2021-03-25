@@ -16,7 +16,6 @@ import os
 import stat
 import json
 import re
-import copy
 import signal
 import time
 
@@ -232,11 +231,13 @@ class rMViewApp(QApplication):
       if not os.path.isfile(self.LOCAL_KNOWN_HOSTS):
         open(self.LOCAL_KNOWN_HOSTS, 'a').close()
 
-    config_sanitized = copy.deepcopy(self.config)
-    if "password" in self.config.get("ssh", {}):
-        config_sanitized["ssh"]["password"] = config_sanitized["ssh"]["password"][:3] + "*****"
+    if log.isEnabledFor(logging.DEBUG):
+      import copy
+      config_sanitized = copy.deepcopy(self.config)
+      if "password" in self.config.get("ssh", {}):
+          config_sanitized["ssh"]["password"] = config_sanitized["ssh"]["password"][:3] + "*****"
+      log.debug("Config values: %s" % (str(config_sanitized)))
 
-    log.info("Config values: %s" % (str(config_sanitized)))
     return True
 
   def _checkConfigFilePermissions(self, file_path):
@@ -251,7 +252,7 @@ class rMViewApp(QApplication):
       if file_permissions.startswith("0") and len(file_permissions) == 4:
         file_permissions = file_permissions[1:]
 
-      log .warn("Config file \"%s\" is readable by others (permissions=%s). If you are config "
+      log.warn("Config file \"%s\" is readable by others (permissions=%s). If your config "
                 "file contains secrets (e.g. password) you are strongly encouraged to make sure "
                 "it's not readable by other users (chmod 600 %s)" % (file_path, file_permissions,
                                                                      file_path))
