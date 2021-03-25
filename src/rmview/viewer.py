@@ -128,12 +128,13 @@ class QtImageViewer(QGraphicsView):
     self.updateViewer()
 
   def mousePressEvent(self, event):
-    scenePos = self.mapToScene(event.pos())
-    if int(event.modifiers()) & int(Qt.ControlModifier):
-      self._button = 1
-    else:
-      self._button = 4
-    self.pointerEvent.emit(scenePos.x(), scenePos.y(), self._button)
+    if event.button() == Qt.LeftButton:
+      scenePos = self.mapToScene(event.pos())
+      if int(event.modifiers()) & int(Qt.ControlModifier):
+        self._button = 1
+      else:
+        self._button = 4
+      self.pointerEvent.emit(scenePos.x(), scenePos.y(), self._button)
 
   def mouseReleaseEvent(self, event):
     scenePos = self.mapToScene(event.pos())
