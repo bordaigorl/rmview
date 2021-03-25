@@ -42,6 +42,9 @@ The easiest installation method is by using `pip`, from the root folder of this 
 
 (please note the command ends with a dot)
 which will install all required dependencies and install a new `rmview` command.
+If you want to use the SSH tunnel feature, install with
+
+    pip install ".[tunnel]"
 
 Then, from anywhere, you can execute `rmview` from the command line.
 The tool will ask for the connection parameters and then ask permission to install the VNC server on the tablet.
@@ -54,7 +57,8 @@ If you plan to modify the source code, use `pip install -e .` so that when execu
 Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted]) with `pip` or `conda` manually:
 
     # install dependencies
-    pip install pyqt5 paramiko twisted sshtunnel
+    pip install pyqt5 paramiko twisted
+    pip install sshtunnel  # optional
     # build resources file
     pyrcc5 -o src/rmview/resources.py resources.qrc
 

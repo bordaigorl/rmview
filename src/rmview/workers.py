@@ -7,7 +7,6 @@ from PyQt5.QtCore import *
 from .rmparams import *
 
 import paramiko
-import sshtunnel
 import struct
 import time
 
@@ -85,7 +84,7 @@ class RFBFactory(RFBFactory):
     return self.instance
 
   def clientConnectionLost(self, connector, reason):
-    log.warning("Connection lost: %s", reason.getErrorMessage())
+    log.warning("Disconnected: %s", reason.getErrorMessage())
     reactor.callFromThread(reactor.stop)
 
   def clientConnectionFailed(self, connector, reason):
@@ -238,20 +237,19 @@ class FrameBufferWorker(QRunnable):
     Set up and start SSH tunnel (if configured).
     """
     if self.use_ssh_tunnel:
-        tunnel = self._get_ssh_tunnel()
-        tunnel.start()
+      tunnel = self._get_ssh_tunnel()
+      tunnel.start()
+      self.sshTunnel = tunnel
 
-        self.sshTunnel = tunnel
+      log.info("Setting up SSH tunnel %s:%s (rm) <-> %s:%s (localhost)" % ("127.0.0.1", 5900,
+                                                                           tunnel.local_bind_host,
+                                                                           tunnel.local_bind_port))
 
-        log.info("Setting up SSH tunnel %s:%s (rm) <-> %s:%s (localhost)" % ("127.0.0.1", 5900,
-                                                                             tunnel.local_bind_host,
-                                                                             tunnel.local_bind_port))
-
-        vnc_server_host = tunnel.local_bind_host
-        vnc_server_port = tunnel.local_bind_port
+      vnc_server_host = tunnel.local_bind_host
+      vnc_server_port = tunnel.local_bind_port
     else:
-        vnc_server_host = self.ssh.hostname
-        vnc_server_port = 5900
+      vnc_server_host = self.ssh.hostname
+      vnc_server_port = 5900
 
 
     return (vnc_server_host, vnc_server_port)
@@ -269,6 +267,10 @@ class FrameBufferWorker(QRunnable):
       else:
         open_tunnel_kwargs["ssh_password"] = self.ssh_config["password"]
 
+      try:
+        import sshtunnel
+      except ModuleNotFoundError:
+        raise Exception("You need to install `sshtunnel` to use the tunnel feature")
       tunnel = sshtunnel.open_tunnel(
         (self.ssh.hostname, 22),
         remote_bind_address=("127.0.0.1", 5900),
