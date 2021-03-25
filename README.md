@@ -150,10 +150,9 @@ If you get an error when connect using a key, but the key seems ok when connecti
 
  - [ ] Settings dialog
  - [ ] About dialog
- - [ ] Pause stream of screen/pen
+ - [x] Pause stream of screen/pen
  - [ ] Binary bundles for Window, Linux and MacOs (PyInstaller?)
  - [ ] Add interaction for Lamy button? (1 331 1 down, 1 331 0 up)
- - [ ] Remove dependency to Twisted in `vnc` branch
 
 
 ## Legacy reStreamer-like version
