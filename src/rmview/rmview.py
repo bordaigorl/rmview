@@ -21,7 +21,7 @@ import signal
 import time
 
 import logging
-logging.basicConfig(format='%(asctime)s %(levelname)s [-] %(message)s')
+logging.basicConfig(format='[%(levelname)s] %(message)s')
 log = logging.getLogger('rmview')
 
 
@@ -544,6 +544,15 @@ class rMViewApp(QApplication):
 
 def rmViewMain():
   log.setLevel(logging.INFO)
+  if len(sys.argv) > 1:
+    if sys.argv[1] == "-v":
+      log.setLevel(logging.DEBUG)
+      del sys.argv[1]
+    elif sys.argv[1] == "-q":
+      log.setLevel(logging.ERROR)
+      del sys.argv[1]
+
+  log.info("STARTING: %s", time.asctime())
   QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
   app = rMViewApp(sys.argv)
   # We register custom signal handler so we can gracefuly stop app with CTRL+C when QT main loop is
@@ -551,7 +560,7 @@ def rmViewMain():
   signal.signal(signal.SIGINT, lambda *args: app.quit())
   app.startTimer(500)
   ecode = app.exec_()
-  print('\nBye!')
+  log.info("QUITTING: %s", time.asctime())
   sys.exit(ecode)
 
 if __name__ == '__main__':
