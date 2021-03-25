@@ -120,13 +120,14 @@ class FrameBufferWorker(QRunnable):
 
     self._stop = True
 
-    log.info("Stopping framebuffer thread...")
+    log.debug("Stopping framebuffer thread...")
 
     if self.vncClient:
       try:
         log.info("Disconnecting from VNC server...")
-        reactor.callFromThread(self.vncClient.disconnect)
-      except Exception:
+        reactor.callFromThread(self.vncClient.stopService)
+      except Exception as e:
+        log.debug("Disconnect failed (%s), stopping reactor" % str(e))
         reactor.callFromThread(reactor.stop)
 
     if self._vnc_server_already_running:
@@ -149,29 +150,26 @@ class FrameBufferWorker(QRunnable):
       except Exception as e:
         log.error(e)
 
-    log.info("Framebuffer thread stopped")
+    log.debug("Framebuffer thread stopped")
 
   @pyqtSlot()
   def run(self):
-    success = self._start_vnc_server()
-
-    if not success:
-      log.error("Failed to start VNC server, exiting...")
-      self.stop()
+    try:
+      self._start_vnc_server()
+      vnc_server_host, vnc_server_port = self._setup_ssh_tunnel_if_configured()
+    except Exception as e:
+      self.signals.onFatalError.emit(e)
       return
 
-    vnc_server_host, vnc_server_port = self._setup_ssh_tunnel_if_configured()
-
-    while not self._stop:
-        log.info("Establishing connection to remote VNC server on %s:%s" % (vnc_server_host,
-                                                                            vnc_server_port))
-        try:
-            self.factory = RFBFactory(self.signals)
-            self.vncClient = internet.TCPClient(vnc_server_host, vnc_server_port, self.factory)
-            self.vncClient.startService()
-            reactor.run(installSignalHandlers=0)
-        except Exception as e:
-            log.error("Failed to connect to the VNC server: %s" % (str(e)))
+    log.info("Establishing connection to remote VNC server on %s:%s" % (vnc_server_host,
+                                                                        vnc_server_port))
+    try:
+      self.factory = RFBFactory(self.signals)
+      self.vncClient = internet.TCPClient(vnc_server_host, vnc_server_port, self.factory)
+      self.vncClient.startService()
+      reactor.run(installSignalHandlers=0)
+    except Exception as e:
+      log.error("Failed to connect to the VNC server: %s" % (str(e)))
 
   def _check_vnc_server_is_already_running(self) -> bool:
     """
@@ -203,7 +201,7 @@ class FrameBufferWorker(QRunnable):
 
     return vnc_server_already_running
 
-  def _start_vnc_server(self) -> bool:
+  def _start_vnc_server(self):
     """
     Start VNC server on reMarkable if it's not already running.
     """
@@ -211,7 +209,7 @@ class FrameBufferWorker(QRunnable):
 
     if self._vnc_server_already_running:
       # Server already running, we will try to use that instance
-      return True
+      return
 
     if self.use_ssh_tunnel:
       # If using SSH tunnel, we ensure VNC server only listens on localhost. That's important for
@@ -222,26 +220,20 @@ class FrameBufferWorker(QRunnable):
 
     log.info("Starting VNC server (command=%s)" % (server_run_cmd))
 
-    try:
-      _, _, stdout = self.ssh.exec_command(server_run_cmd)
+    _, _, stdout = self.ssh.exec_command(server_run_cmd)
 
-      # TODO: This method for consuming stdout is not really good, it assumed there will always be
-      # at least one line produced...
-      # And we should also check exit code and not stdout for better robustness.
-      stdout_bytes = next(stdout).strip()
-      log.info("Start command stdout output: %s" % (stdout_bytes))
+    # TODO: This method for consuming stdout is not really good, it assumed there will always be
+    # at least one line produced...
+    # And we should also check exit code and not stdout for better robustness.
+    stdout_bytes = next(stdout).strip()
+    log.info("Start command stdout output: %s" % (stdout_bytes))
 
-      if "listening for vnc connections on" not in stdout_bytes.lower():
-        raise Exception("Failed to start VNC server on reMarkable: %s" % (stdout_bytes))
-
-    except Exception as e:
-      self.signals.onFatalError.emit(e)
-      return False
+    if "listening for vnc connections on" not in stdout_bytes.lower():
+      raise Exception("Failed to start VNC server on reMarkable: %s" % (stdout_bytes))
 
     # Register atexit handler to ensure we always try to kill started server on exit
     atexit.register(self.stop)
 
-    return True
 
   def _setup_ssh_tunnel_if_configured(self) -> Tuple[str, int]:
     """
