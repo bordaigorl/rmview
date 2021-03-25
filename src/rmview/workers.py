@@ -130,18 +130,16 @@ class FrameBufferWorker(QRunnable):
         log.debug("Disconnect failed (%s), stopping reactor" % str(e))
         reactor.callFromThread(reactor.stop)
 
-    if self._vnc_server_already_running:
-      # We used an existing running instance and didn't start one ourselves so we will not kill it.
-      return
-
-    try:
-      log.info("Stopping VNC server...")
-      self.ssh.exec_command("killall -SIGINT rM-vnc-server-standalone")
-    except Exception as e:
-      log.warning("VNC could not be stopped on the reMarkable.")
-      log.warning("Although this is not a big problem, it may consume some resources until you restart the tablet.")
-      log.warning("You can manually terminate it by running `ssh %s killall rM-vnc-server-standalone`.", self.ssh.hostname)
-      log.error(e)
+    # If we used an existing running instance and didn't start one ourselves we will not kill it.
+    if not self._vnc_server_already_running:
+      try:
+        log.info("Stopping VNC server...")
+        self.ssh.exec_command("killall -SIGINT rM-vnc-server-standalone")
+      except Exception as e:
+        log.warning("VNC could not be stopped on the reMarkable.")
+        log.warning("Although this is not a big problem, it may consume some resources until you restart the tablet.")
+        log.warning("You can manually terminate it by running `ssh %s killall rM-vnc-server-standalone`.", self.ssh.hostname)
+        log.error(e)
 
     if self.sshTunnel:
       try:
