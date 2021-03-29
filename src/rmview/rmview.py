@@ -237,36 +237,37 @@ class rMViewApp(QApplication):
 
     sftp = None
     # check needed files are in place
-    _,out,_ = ssh.exec_command("[ -x /usr/lib/libcrypto.so.1.0.2 ]")
-    if out.channel.recv_exit_status() != 0:
-      answer = QMessageBox.question(self.viewer,
-        "Missing libcrypto 1.0.2",
-        "Your reMarkable is missing the right version of a library needed by rmView.\n"\
-        "This is most probably a result of updating the tablet to version 2.6.\n\n"\
-        "Would you like rmView to install the missing library?\n"\
-        "To resolve the issue manually, press NO and consult the documentation.")
-      if answer == QMessageBox.Yes:
-        log.info("Installing libcrypto...")
-        try:
-          sftp = ssh.open_sftp()
-          from stat import S_IXUSR
-          fo = QFile(':bin/libcrypto.so.1.0.2.gz')
-          fo.open(QIODevice.ReadOnly)
-          sftp.putfo(fo, '/usr/lib/libcrypto.so.1.0.2.gz')
-          fo.close()
-          _,out,_ = ssh.exec_command("/bin/gunzip /usr/lib/libcrypto.so.1.0.2.gz")
-          out = out.channel.recv_exit_status()
-          if out != 0:
-            raise Exception("libcrypto could not be decompressed on the tablet [%d]" % out)
-          log.info("Installation successful!")
-        except Exception as e:
-          log.error('%s %s', type(e), e)
-          QMessageBox.critical(None, "Error", 'There has been an error while trying to install the required components on the tablet.\n%s.' % e)
+    if version == 2:
+      _,out,_ = ssh.exec_command("[ -x /usr/lib/libcrypto.so.1.0.2 ]")
+      if out.channel.recv_exit_status() != 0:
+        answer = QMessageBox.question(self.viewer,
+          "Missing libcrypto 1.0.2",
+          "Your reMarkable is missing the right version of a library needed by rmView.\n"\
+          "This is most probably a result of updating the tablet to version 2.6.\n\n"\
+          "Would you like rmView to install the missing library?\n"\
+          "To resolve the issue manually, press NO and consult the documentation.")
+        if answer == QMessageBox.Yes:
+          log.info("Installing libcrypto...")
+          try:
+            sftp = ssh.open_sftp()
+            from stat import S_IXUSR
+            fo = QFile(':bin/libcrypto.so.1.0.2.gz')
+            fo.open(QIODevice.ReadOnly)
+            sftp.putfo(fo, '/usr/lib/libcrypto.so.1.0.2.gz')
+            fo.close()
+            _,out,_ = ssh.exec_command("/bin/gunzip /usr/lib/libcrypto.so.1.0.2.gz")
+            out = out.channel.recv_exit_status()
+            if out != 0:
+              raise Exception("libcrypto could not be decompressed on the tablet [%d]" % out)
+            log.info("Installation successful!")
+          except Exception as e:
+            log.error('%s %s', type(e), e)
+            QMessageBox.critical(None, "Error", 'There has been an error while trying to install the required components on the tablet.\n%s.' % e)
+            self.quit()
+            return
+        else:
           self.quit()
           return
-      else:
-        self.quit()
-        return
 
     _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server-standalone ]")
     if out.channel.recv_exit_status() != 0:
