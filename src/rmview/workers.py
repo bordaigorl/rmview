@@ -174,8 +174,7 @@ class FrameBufferWorker(QRunnable):
 
     If it is, True is returned by this method and a log message if emitted.
     """
-    _, stdout, stderr = self.ssh.exec_command("ps | grep rM-vnc-server-standalone | grep -v grep",
-                                              get_pty=True, timeout=3)
+    _, stdout, stderr = self.ssh.exec_command("ps -ww | grep rM-vnc-server-standalone | grep -v grep")
 
     stdout_bytes = stdout.read()
 
