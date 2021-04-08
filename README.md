@@ -119,7 +119,7 @@ Connection parameters are provided as a dictionary with the following keys (all 
 | `timeout`         | Connection timeout in seconds                           | default: 1                            |
 | `host_key_policy` | `"ask"`, `"ignore_new"`, `"ignore_all"`, `"auto_add"`   | default: `"ask"` (description below)  |
 | `tunnel`          | True to connect to VNC server over a local SSH tunnel   | default: `false` (description below)  |
-| `tunnel_compression`          | True to enable compression for SSH tunnel   | default: `true` (description below)  |
+| `tunnel_compression`          | True to enable compression for SSH tunnel   | default: `false` (description below)  |
 
 The `address` parameter can be either:
 - a single string, in which case the address is used for connection
