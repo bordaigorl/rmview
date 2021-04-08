@@ -387,6 +387,8 @@ class rMViewApp(QApplication):
   @pyqtSlot()
   def cloneViewer(self):
     img = self.viewer.image()
+    img = QPixmap.fromImage(img)
+    img.detach()
     v = QtImageViewer()
     v.setImage(img)
     v.show()
