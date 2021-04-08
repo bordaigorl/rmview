@@ -4,6 +4,7 @@
     <file>assets/tablet.svg</file>
     <file>assets/dead.svg</file>
     <file>assets/problem.svg</file>
+    <file>assets/connecting.png</file>
     <file>bin/rM1-vnc-server-standalone</file>
     <file>bin/rM2-vnc-server-standalone</file>
 </qresource>

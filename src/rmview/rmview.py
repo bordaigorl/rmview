@@ -13,12 +13,14 @@ from .rmparams import *
 
 import sys
 import os
+import stat
 import json
 import re
+import signal
 import time
 
 import logging
-logging.basicConfig(format='%(message)s')
+logging.basicConfig(format='[%(levelname)s] %(message)s')
 log = logging.getLogger('rmview')
 
 
@@ -65,6 +67,9 @@ class rMViewApp(QApplication):
         log.error("Malformed configuration in %s: %s" % (f, e))
       except Exception as e:
         log.debug("Configuration failure in %s: %s" % (f, e))
+
+    self._checkConfigFilePermissions(self.config_file)
+
     self.config.setdefault('ssh', {})
     self.pen_size = self.config.get('pen_size', self.pen_size)
     self.trailPen = QPen(QColor(self.config.get('pen_color', 'red')), max(1, self.pen_size // 3))
@@ -78,6 +83,7 @@ class rMViewApp(QApplication):
     self.setWindowIcon(QIcon(':/assets/rmview.svg'))
 
     self.viewer = QtImageViewer()
+
     if 'background_color' in self.config:
       self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
 
@@ -131,6 +137,9 @@ class rMViewApp(QApplication):
 
     self.viewer.setWindowTitle("rMview")
     self.viewer.show()
+
+    # Display connecting image until we successfuly connect
+    self.viewer.setImage(QPixmap(':/assets/connecting.png'))
 
     self.orient = 0
     orient = self.config.get('orientation', 'landscape')
@@ -222,8 +231,31 @@ class rMViewApp(QApplication):
       if not os.path.isfile(self.LOCAL_KNOWN_HOSTS):
         open(self.LOCAL_KNOWN_HOSTS, 'a').close()
 
-    log.info(self.config)
+    if log.isEnabledFor(logging.DEBUG):
+      import copy
+      config_sanitized = copy.deepcopy(self.config)
+      if "password" in self.config.get("ssh", {}):
+          config_sanitized["ssh"]["password"] = config_sanitized["ssh"]["password"][:3] + "*****"
+      log.debug("Config values: %s" % (str(config_sanitized)))
+
     return True
+
+  def _checkConfigFilePermissions(self, file_path):
+    """
+    Emit a warning message if config file is readable by others.
+    """
+    st_mode = os.stat(file_path).st_mode
+
+    if bool(st_mode & stat.S_IROTH) or bool(st_mode & stat.S_IWOTH):
+      file_permissions = str(oct(st_mode)[4:])
+
+      if file_permissions.startswith("0") and len(file_permissions) == 4:
+        file_permissions = file_permissions[1:]
+
+      log.warn("Config file \"%s\" is readable by others (permissions=%s). If your config "
+                "file contains secrets (e.g. password) you are strongly encouraged to make sure "
+                "it's not readable by other users (chmod 600 %s)" % (file_path, file_permissions,
+                                                                     file_path))
 
   def requestConnect(self, host_key_policy=None):
     self.viewer.setWindowTitle("rMview - Connecting...")
@@ -309,7 +341,8 @@ class rMViewApp(QApplication):
         self.openSettings(prompt=False)
         return
 
-    self.fbworker = FrameBufferWorker(ssh, delay=self.config.get('fetch_frame_delay'))
+    self.fbworker = FrameBufferWorker(ssh, ssh_config=self.config.get('ssh', {}),
+                                      delay=self.config.get('fetch_frame_delay'))
     self.fbworker.signals.onNewFrame.connect(self.onNewFrame)
     self.fbworker.signals.onFatalError.connect(self.frameError)
     self.threadpool.start(self.fbworker)
@@ -509,11 +542,28 @@ class rMViewApp(QApplication):
     QMessageBox.critical(self.viewer, "Error", 'Please check your reMarkable is properly configured, see the documentation for instructions.\n\n%s' % e)
     self.quit()
 
+  def event(self, e):
+    return QApplication.event(self, e)
+
 def rmViewMain():
   log.setLevel(logging.INFO)
+  if len(sys.argv) > 1:
+    if sys.argv[1] == "-v":
+      log.setLevel(logging.DEBUG)
+      del sys.argv[1]
+    elif sys.argv[1] == "-q":
+      log.setLevel(logging.ERROR)
+      del sys.argv[1]
+
+  log.info("STARTING: %s", time.asctime())
   QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-  ecode = rMViewApp(sys.argv).exec_()
-  print('\nBye!')
+  app = rMViewApp(sys.argv)
+  # We register custom signal handler so we can gracefuly stop app with CTRL+C when QT main loop is
+  # running
+  signal.signal(signal.SIGINT, lambda *args: app.quit())
+  app.startTimer(500)
+  ecode = app.exec_()
+  log.info("QUITTING: %s", time.asctime())
   sys.exit(ecode)
 
 if __name__ == '__main__':
