@@ -69,10 +69,31 @@ class rMConnect(QRunnable):
     self.address = address
     self.username = username
     self.password = password
-    self.key = key
     self.timeout = timeout
     self.host_key_policy = host_key_policy
     self.known_hosts = known_hosts
+
+    if key is not None:
+      key = os.path.expanduser(key)
+
+      if password:
+        # password protected key file, password provided in the config
+        self.pkey = paramiko.RSAKey.from_private_key_file(key, password=password)
+      else:
+        try:
+          self.pkey = paramiko.RSAKey.from_private_key_file(key)
+        except paramiko.ssh_exception.PasswordRequiredException:
+          passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:",
+                                                QLineEdit.Password)
+          if ok:
+            self.pkey = paramiko.RSAKey.from_private_key_file(key, password=passphrase)
+          else:
+            raise Exception("A passphrase for SSH key is required")
+    else:
+      self.pkey = None
+      if self.password is None:
+        log.warning("No key nor password given. System-wide SSH connection parameters are going to be used.")
+
 
     self.signals = rMConnectSignals()
 
@@ -110,31 +131,10 @@ class rMConnect(QRunnable):
       policy = HOST_KEY_POLICY.get(self.host_key_policy, RejectNewHostKey)
       self.client.set_missing_host_key_policy(policy())
 
-      if self.key is not None:
-        key = os.path.expanduser(self.key)
-
-        if self.password:
-            # password protected key file, password provided in the config
-            pkey = paramiko.RSAKey.from_private_key_file(key, password=self.password)
-        else:
-            try:
-                pkey = paramiko.RSAKey.from_private_key_file(key)
-            except paramiko.ssh_exception.PasswordRequiredException:
-                passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:",
-                                                      QLineEdit.Password)
-                if ok:
-                    pkey = paramiko.RSAKey.from_private_key_file(key, password=passphrase)
-                else:
-                    raise Exception("A passphrase for SSH key is required")
-      else:
-        pkey = None
-        if self.password is None:
-          log.warning("No key nor password given. System-wide SSH connection parameters are going to be used.")
-
       self.options = {
         'username': self.username,
         'password': self.password,
-        'pkey': pkey,
+        'pkey': self.pkey,
         'timeout': self.timeout,
       }
     except Exception as e:
