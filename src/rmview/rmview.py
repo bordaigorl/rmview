@@ -561,7 +561,6 @@ def rmViewMain():
   # We register custom signal handler so we can gracefuly stop app with CTRL+C when QT main loop is
   # running
   signal.signal(signal.SIGINT, lambda *args: app.quit())
-  app.startTimer(500)
   ecode = app.exec_()
   log.info("QUITTING: %s", time.asctime())
   sys.exit(ecode)

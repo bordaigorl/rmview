@@ -134,17 +134,17 @@ class QtImageViewer(QGraphicsView):
         self._button = 1
       else:
         self._button = 4
-      self.pointerEvent.emit(scenePos.x(), scenePos.y(), self._button)
+      self.pointerEvent.emit(int(scenePos.x()), int(scenePos.y()), self._button)
 
   def mouseReleaseEvent(self, event):
     scenePos = self.mapToScene(event.pos())
     self._button = 0
-    self.pointerEvent.emit(scenePos.x(), scenePos.y(), 0)
+    self.pointerEvent.emit(int(scenePos.x()), int(scenePos.y()), 0)
 
   def mouseMoveEvent(self, event):
     if self._button > 0:
       scenePos = self.mapToScene(event.pos())
-      self.pointerEvent.emit(scenePos.x(), scenePos.y(), self._button)
+      self.pointerEvent.emit(int(scenePos.x()), int(scenePos.y()), self._button)
 
   def mouseDoubleClickEvent(self, event):
     # scenePos = self.mapToScene(event.pos())
