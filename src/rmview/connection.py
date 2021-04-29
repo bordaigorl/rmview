@@ -71,7 +71,7 @@ class rMConnect(QRunnable):
     self.password = password
     self.timeout = timeout
     self.host_key_policy = host_key_policy
-    self.known_hosts = known_hosts
+    self._known_hosts = known_hosts
 
     if key is not None:
       key = os.path.expanduser(key)
@@ -113,10 +113,10 @@ class rMConnect(QRunnable):
       self.client = paramiko.SSHClient()
 
       if self.host_key_policy != "ignore_all":
-        if self.known_hosts and os.path.isfile(self.known_hosts):
-          log.info("Using known hosts file: %s" % (self.known_hosts))
-          self.client.load_host_keys(self.known_hosts)
-          log.info("Loaded known hosts from %s", self.known_hosts)
+        if self._known_hosts and os.path.isfile(self._known_hosts):
+          log.info("Using known hosts file: %s" % (self._known_hosts))
+          self.client.load_host_keys(self._known_hosts)
+          log.info("Loaded known hosts from %s", self._known_hosts)
         else:
           log.info("Using system default known hosts file")
           log.info("Loading system default known hosts file, this may take a while...")
@@ -159,7 +159,7 @@ class rMConnect(QRunnable):
       log.info("Please check your remarkable is connected and retry.")
       self.signals.onError.emit(e)
     try:
-      if self._known_hosts:
+      if self._known_hosts and os.path.isfile(self._known_hosts):
         self.client.save_host_keys(self._known_hosts)
     except Exception as e:
       log.warning("Could not save known keys at '%s'" % self._known_hosts)
