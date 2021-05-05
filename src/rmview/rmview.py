@@ -259,6 +259,7 @@ class rMViewApp(QApplication):
             out = out.channel.recv_exit_status()
             if out != 0:
               raise Exception("libcrypto could not be decompressed on the tablet [%d]" % out)
+            sftp.chmod('/usr/lib/libcrypto.so.1.0.2', S_IXUSR)
             log.info("Installation successful!")
           except Exception as e:
             log.error('%s %s', type(e), e)
