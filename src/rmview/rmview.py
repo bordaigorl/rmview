@@ -346,7 +346,7 @@ class rMViewApp(QApplication):
     self.fbworker.signals.onNewFrame.connect(self.onNewFrame)
     self.fbworker.signals.onFatalError.connect(self.frameError)
     self.threadpool.start(self.fbworker)
-    if self.config.get("forward_mouse_events", True):
+    if self.config.get("forward_mouse_events", False):
       self.viewer.pointerEvent.connect(self.fbworker.pointerEvent)
 
     self.penworker = PointerWorker(ssh, path="/dev/input/event%d" % (version-1))

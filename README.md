@@ -105,6 +105,15 @@ All the settings are optional.
 | `background_color`       | color of window                                         | `"white"`     |
 | `hide_pen_on_press`      | if true, the pointer is hidden while writing            | `true`        |
 | `show_pen_on_lift`       | if true, the pointer is shown when lifting the pen      | `true`        |
+| `forward_mouse_events`   | Send mouse events to tablet (see below)                 | `false`       |
+
+If `forward_mouse_events` is enabled, clicks and mouse drags on the main window
+will be sent to the tablet as touch events,
+mouse drags while pressing <kbd>CTRL</kbd> will be sent as pen events, allowing drawing.
+
+**PLEASE NOTE**: due to how the VNC server handles this at the moment, you may experience unresponsiveness of the physical buttons on the tablet.
+This is because the palm rejection mechanism can get confused by the synthetic events.
+To resolve this, it is sufficient to move the physical pen close to the tablet and then away from it, and the buttons should go back to working properly.
 
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
@@ -119,7 +128,7 @@ Connection parameters are provided as a dictionary with the following keys (all 
 | `timeout`         | Connection timeout in seconds                           | default: 1                            |
 | `host_key_policy` | `"ask"`, `"ignore_new"`, `"ignore_all"`, `"auto_add"`   | default: `"ask"` (description below)  |
 | `tunnel`          | True to connect to VNC server over a local SSH tunnel   | default: `false` (description below)  |
-| `tunnel_compression`          | True to enable compression for SSH tunnel   | default: `false` (description below)  |
+| `tunnel_compression`   | True to enable compression for SSH tunnel          | default: `false` (description below)  |
 
 The `address` parameter can be either:
 - a single string, in which case the address is used for connection
