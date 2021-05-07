@@ -137,7 +137,7 @@ class FrameBufferWorker(QRunnable):
       except Exception as e:
         log.warning("VNC could not be stopped on the reMarkable.")
         log.warning("Although this is not a big problem, it may consume some resources until you restart the tablet.")
-        log.warning("You can manually terminate it by running `ssh %s killall rM-vnc-server-standalone`.", self.ssh.hostname)
+        log.warning("You can manually terminate it by running `ssh root@%s killall rM-vnc-server-standalone`.", self.ssh.hostname)
         log.error(e)
 
     if self.sshTunnel:
