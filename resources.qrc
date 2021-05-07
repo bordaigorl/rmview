@@ -6,6 +6,6 @@
     <file>assets/problem.svg</file>
     <file>bin/rM1-vnc-server-standalone</file>
     <file>bin/rM2-vnc-server-standalone</file>
-    <file>bin/libcrypto.so.1.0.2.gz</file>
+    <file>bin/libcrypto.so.1.0.2</file>
 </qresource>
 </RCC>

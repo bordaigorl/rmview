@@ -250,15 +250,15 @@ class rMViewApp(QApplication):
           log.info("Installing libcrypto...")
           try:
             sftp = ssh.open_sftp()
-            from stat import S_IXUSR
-            fo = QFile(':bin/libcrypto.so.1.0.2.gz')
+            fo = QFile(':bin/libcrypto.so.1.0.2')
             fo.open(QIODevice.ReadOnly)
-            sftp.putfo(fo, '/usr/lib/libcrypto.so.1.0.2.gz')
+            sftp.putfo(fo, '/usr/lib/libcrypto.so.1.0.2')
             fo.close()
-            _,out,_ = ssh.exec_command("/bin/gunzip /usr/lib/libcrypto.so.1.0.2.gz")
-            out = out.channel.recv_exit_status()
-            if out != 0:
-              raise Exception("libcrypto could not be decompressed on the tablet [%d]" % out)
+            # _,out,_ = ssh.exec_command("/bin/gunzip /usr/lib/libcrypto.so.1.0.2.gz")
+            # out = out.channel.recv_exit_status()
+            # if out != 0:
+            #   raise Exception("libcrypto could not be decompressed on the tablet [%d]" % out)
+            from stat import S_IXUSR
             sftp.chmod('/usr/lib/libcrypto.so.1.0.2', S_IXUSR)
             log.info("Installation successful!")
           except Exception as e:
