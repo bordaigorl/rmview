@@ -13,18 +13,21 @@
 * Clone a frame into separate window for reference
 * Save screenshots as PNG
 
-> :warning: **For reMarkable 2 users** :warning::
-> rMview should work out of the box with the stock firmware.
-> If you use [`rm2fb`](https://github.com/ddvk/remarkable2-framebuffer) there are known compatibilities issues that are [being addressed](https://github.com/pl-semiotics/rM-vnc-server/issues/5).
+## Known issues and caveats:
+
+### :warning: For reMarkable 2 users :warning:
+rMview should work out of the box with the stock firmware version 2.5 or below.
+
+For 2.6 and above, for the moment you need to copy an extra library to the tablet. The process has not been automated yet. Please see [the wiki](https://github.com/bordaigorl/rmview/wiki/Installing-missing-libcrypto-on-RM2-v2.6-or-above) for instructions.
+
+If you use [`rm2fb`](https://github.com/ddvk/remarkable2-framebuffer) there are known compatibilities issues that are [being addressed](https://github.com/pl-semiotics/rM-vnc-server/issues/5).
 
 
+## Installation
 
 The most efficient installation method is the semi-automatic one below, which requires a Python3 installation.
 If you are looking for a standalone executable, check the [releases page](https://github.com/bordaigorl/rmview/releases) for executable bundles.
 If there is no bundle for your operating system then follow the installation instructions below.
-
-
-## Installation
 
 As a basic prerequisite you will need [Python3][py3] on your computer.
 
