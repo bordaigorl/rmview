@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QT_VERSION_STR
+from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
@@ -17,6 +17,8 @@ class QtImageViewer(QGraphicsView):
 
     self.setRenderHint(QPainter.Antialiasing)
     self.setRenderHint(QPainter.SmoothPixmapTransform)
+
+    self.viewport().grabGesture(Qt.PinchGesture)
 
     self.scene = QGraphicsScene()
     self.setScene(self.scene)
@@ -156,6 +158,14 @@ class QtImageViewer(QGraphicsView):
         # self.rightMouseButtonDoubleClicked.emit(scenePos.x(), scenePos.y())
     QGraphicsView.mouseDoubleClickEvent(self, event)
 
+  def viewportEvent(self, event):
+    if event.type() == QEvent.Gesture:
+      pinch = event.gesture(Qt.PinchGesture)
+      if pinch is not None:
+        self._fit = False
+        self.scale(pinch.scaleFactor(), pinch.scaleFactor())
+        return True
+    return bool(QGraphicsView.viewportEvent(self, event))
 
   def wheelEvent(self, event):
     if event.modifiers() == Qt.NoModifier:
