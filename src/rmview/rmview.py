@@ -41,6 +41,8 @@ class rMViewApp(QApplication):
   pen_size = 15
   trail = None  # None: disabled, False: inactive, True: active
 
+  cloned_frames = set()
+
   def __init__(self, args):
     super(rMViewApp, self).__init__(args)
 
@@ -423,8 +425,12 @@ class rMViewApp(QApplication):
     img = QPixmap.fromImage(img)
     img.detach()
     v = QtImageViewer()
+    v.setAttribute(Qt.WA_DeleteOnClose)
     v.setImage(img)
     v.show()
+    v.rotate(self.viewer._rotation)
+    self.cloned_frames.add(v)
+    v.destroyed.connect(lambda: self.cloned_frames.discard(v))
 
   @pyqtSlot()
   def toggleStreaming(self):
