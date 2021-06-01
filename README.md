@@ -72,6 +72,12 @@ On the reMarkable itself you need to install [rM-vnc-server][vnc] by copying the
 
 Then you can run the program with `python -m rmview`.
 
+### Using Docker
+
+This project contains a `Dockerfile` so that `rmview` and all its dependencies can be installed and run inside a Docker container.
+Since `rmview` not only reads your local configuration but also needs an X11 display, you should run `docker-run.sh` which takes care of the host mappings.
+Please note that `docker-run.sh` is written for Unix-like OSes and expects your rmview configuration inside your local `$HOME/.config/rmview/` folder.
+
 ## Usage and configuration
 
 **Suggested first use:**
