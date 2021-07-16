@@ -235,52 +235,6 @@ class rMViewApp(QApplication):
 
     version = int(version[1])
 
-    # check needed files are in place
-    _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server-standalone ]")
-    if out.channel.recv_exit_status() != 0:
-      mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing some needed components.')
-      icon = QPixmap(":/assets/problem.svg")
-      icon.setDevicePixelRatio(self.devicePixelRatio())
-      mbox.setIconPixmap(icon)
-      mbox.setInformativeText(
-        "To work properly, rmView needs the rM-vnc-server-standalone program "\
-        "to be installed on your tablet.\n"\
-        "You can install them manually, or let rmView do the work for you by pressing 'Auto Install' below.\n\n"\
-        "If you are unsure, please consult the documentation.")
-      mbox.addButton(QMessageBox.Cancel)
-      mbox.addButton(QMessageBox.Help)
-      mbox.addButton("Settings...", QMessageBox.ResetRole)
-      mbox.addButton("Auto Install", QMessageBox.AcceptRole)
-      mbox.setDefaultButton(0)
-      answer = mbox.exec()
-      log.info(answer)
-      if answer == 1:
-        log.info("Installing...")
-        try:
-          sftp = ssh.open_sftp()
-          from stat import S_IXUSR
-          fo = QFile(':bin/rM%d-vnc-server-standalone' % version)
-          fo.open(QIODevice.ReadOnly)
-          sftp.putfo(fo, 'rM-vnc-server-standalone')
-          fo.close()
-          sftp.chmod('rM-vnc-server-standalone', S_IXUSR)
-          log.info("Installation successful!")
-        except Exception as e:
-          log.error('%s %s', type(e), e)
-          QMessageBox.critical(None, "Error", 'There has been an error while trying to install the required components on the tablet.\n%s\n.' % e)
-          self.quit()
-          return
-      elif answer == QMessageBox.Cancel:
-        self.quit()
-        return
-      elif answer == QMessageBox.Help:
-        QDesktopServices.openUrl(QUrl("https://github.com/bordaigorl/rmview"))
-        self.quit()
-        return
-      else:
-        self.openSettings(prompt=False)
-        return
-
     self.fbworker = FrameBufferWorker(ssh, delay=self.config.get('fetch_frame_delay'))
     self.fbworker.signals.onNewFrame.connect(self.onNewFrame)
     self.fbworker.signals.onFatalError.connect(self.frameError)

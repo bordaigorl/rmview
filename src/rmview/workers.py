@@ -12,9 +12,8 @@ import sys
 import os
 import logging
 
-
 from twisted.internet.protocol import Protocol
-from twisted.internet import protocol, reactor
+from twisted.internet import protocol, reactor, ssl
 from twisted.application import internet, service
 
 from .rfb import *
@@ -39,10 +38,7 @@ class RFB(RFBClient):
   def vncConnectionMade(self):
     self.signals = self.factory.signals
     self.setEncodings([
-      HEXTILE_ENCODING,
-      CORRE_ENCODING,
-      PSEUDO_CURSOR_ENCODING,
-      RRE_ENCODING,
+      ZRLE_ENCODING,
       RAW_ENCODING ])
     time.sleep(.1) # get first image without artifacts
     self.framebufferUpdateRequest()
@@ -58,7 +54,6 @@ class RFB(RFBClient):
     self.painter.drawImage(x,y,QImage(data, width, height, width * BYTES_PER_PIXEL, IMG_FORMAT))
 
 
-
 class RFBFactory(RFBFactory):
   protocol = RFB
 
@@ -68,11 +63,12 @@ class RFBFactory(RFBFactory):
 
   def clientConnectionLost(self, connector, reason):
     log.warning("Connection lost: %s", reason.getErrorMessage())
-    connector.connect()
+    reactor.callFromThread(reactor.stop)
+    self.signals.onFatalError.emit(Exception("Connection failed: " + str(reason)))
 
   def clientConnectionFailed(self, connector, reason):
-    self.signals.onFatalError.emit(Exception("Connection failed: " + str(reason)))
     reactor.callFromThread(reactor.stop)
+    self.signals.onFatalError.emit(Exception("Connection failed: " + str(reason)))
 
 
 class FrameBufferWorker(QRunnable):
@@ -83,34 +79,20 @@ class FrameBufferWorker(QRunnable):
     super(FrameBufferWorker, self).__init__()
     self.ssh = ssh
     self.img_format = img_format
-
     self.signals = FBWSignals()
 
   def stop(self):
     self._stop = True
     log.info("Stopping framebuffer thread...")
     reactor.callFromThread(reactor.stop)
-    try:
-      self.ssh.exec_command("killall rM-vnc-server-standalone", timeout=3)
-    except Exception as e:
-      log.warning("VNC could not be stopped on the reMarkable.")
-      log.warning("Although this is not a big problem, it may consume some resources until you restart the tablet.")
-      log.warning("You can manually terminate it by running `ssh %s killall rM-vnc-server-standalone`.", self.ssh.hostname)
-      log.error(e)
-    log.info("Framebuffer thread stopped")
 
   @pyqtSlot()
   def run(self):
-    try:
-      _,_,out = self.ssh.exec_command("$HOME/rM-vnc-server-standalone")
-      log.info(next(out))
-    except Exception as e:
-      self.signals.onFatalError.emit(e)
-
-    while self._stop == False:
       log.info("Starting VNC server")
       try:
-        self.vncClient = internet.TCPClient(self.ssh.hostname, 5900, RFBFactory(self.signals))
+        #left for testing with stunnel
+        #self.vncClient = internet.TCPClient("localhost", 31337, RFBFactory(self.signals))
+        self.vncClient = internet.SSLClient(self.ssh.hostname, 5900, RFBFactory(self.signals), ssl.ClientContextFactory())
         self.vncClient.startService()
         reactor.run(installSignalHandlers=0)
       except Exception as e:
