@@ -29,6 +29,8 @@ class rMViewApp(QApplication):
   config_file = None
   config = {}
 
+  force_install_server = False
+
   viewer = None
   fbworker = None
   penworker = None
@@ -50,6 +52,10 @@ class rMViewApp(QApplication):
     self.DEFAULT_CONFIG = os.path.join(self.CONFIG_DIR, 'rmview.json')
     self.LOCAL_KNOWN_HOSTS = os.path.join(self.CONFIG_DIR, 'rmview_known_hosts')
 
+    if len(args) >= 2:
+      if args[1] == "--install-server":
+        self.force_install_server = True
+        args.pop(0)
     config_files = [] if len(args) < 2 else [args[1]]
     config_files += ['rmview.json']
     rmview_conf = os.environ.get("RMVIEW_CONF")
@@ -297,25 +303,32 @@ class rMViewApp(QApplication):
 
     version = int(version[1])
 
-    # check needed files are in place
-    _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server-standalone ]")
-    if out.channel.recv_exit_status() != 0:
-      mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing some needed components.')
-      icon = QPixmap(":/assets/problem.svg")
-      icon.setDevicePixelRatio(self.devicePixelRatio())
-      mbox.setIconPixmap(icon)
-      mbox.setInformativeText(
-        "To work properly, rmView needs the rM-vnc-server-standalone program "\
-        "to be installed on your tablet.\n"\
-        "You can install them manually, or let rmView do the work for you by pressing 'Auto Install' below.\n\n"\
-        "If you are unsure, please consult the documentation.")
-      mbox.addButton(QMessageBox.Cancel)
-      mbox.addButton(QMessageBox.Help)
-      mbox.addButton("Settings...", QMessageBox.ResetRole)
-      mbox.addButton("Auto Install", QMessageBox.AcceptRole)
-      mbox.setDefaultButton(0)
-      answer = mbox.exec()
-      log.info(answer)
+    if self.force_install_server:
+      install = True
+    else:
+      # check needed files are in place
+      _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server-standalone ]")
+      install = (out.channel.recv_exit_status() != 0)
+
+    if install:
+      if self.force_install_server:
+        answer = 1
+      else:
+        mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing some needed components.')
+        icon = QPixmap(":/assets/problem.svg")
+        icon.setDevicePixelRatio(self.devicePixelRatio())
+        mbox.setIconPixmap(icon)
+        mbox.setInformativeText(
+          "To work properly, rmView needs the rM-vnc-server-standalone program "\
+          "to be installed on your tablet.\n"\
+          "You can install them manually, or let rmView do the work for you by pressing 'Auto Install' below.\n\n"\
+          "If you are unsure, please consult the documentation.")
+        mbox.addButton(QMessageBox.Cancel)
+        mbox.addButton(QMessageBox.Help)
+        mbox.addButton("Settings...", QMessageBox.ResetRole)
+        mbox.addButton("Auto Install", QMessageBox.AcceptRole)
+        mbox.setDefaultButton(0)
+        answer = mbox.exec()
       if answer == 1:
         log.info("Installing...")
         try:

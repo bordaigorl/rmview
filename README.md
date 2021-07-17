@@ -88,12 +88,16 @@ the default configuration file which you can edit according to the documentation
 
 More generally, you can invoke the program with
 
-    rmview [-v|-q] [config]
+    rmview [-v|-q] [--install-server] [config]
 
-The optional `-v` flag makes the console output verbose, `-q` makes it quiet (only errors).
-The optional `config` parameter is the filename of a json configuration file.
-If the parameter is not found, the program will look for a `rmview.json` file in the current directory, or, if not found, for the path stored in the environment variable `RMVIEW_CONF`.
+All arguments are optional:
+
+* The `-v` flag makes the console output verbose, `-q` makes it quiet (only errors).
+* The `--install-server` flag forces the automatic installation of the VNC server on the tablet; without this option, if the server is missing the user will get offered to install it. With the option, the server will be installed even if already present, which is useful to update the server with a newer version.
+* The `config` argument is the filename of a json configuration file.
+If the argument is not found, the program will look for a `rmview.json` file in the current directory, or, if not found, for the path stored in the environment variable `RMVIEW_CONF`.
 If none are found, or if the configuration is underspecified, the tool is going to prompt for address/password.
+
 
 ### Configuration files
 
