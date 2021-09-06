@@ -3,7 +3,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 from . import resources
-from .workers import FrameBufferWorker, PointerWorker, KEY_Left, KEY_Right, KEY_Escape
+from .workers import FrameBufferWorker, KEY_Left, KEY_Right, KEY_Escape
+from .pentracker import PenTracker
 from .connection import rMConnect, RejectNewHostKey, AddNewHostKey, UnknownHostKeyException
 from .viewer import QtImageViewer
 
@@ -351,7 +352,7 @@ class rMViewApp(QApplication):
     if self.config.get("forward_mouse_events", False):
       self.viewer.pointerEvent.connect(self.fbworker.pointerEvent)
 
-    self.penworker = PointerWorker(ssh, path="/dev/input/event%d" % (version-1))
+    self.penworker = PenTracker(ssh, path="/dev/input/event%d" % (version-1))
     self.threadpool.start(self.penworker)
     self.pen = self.viewer.scene.addEllipse(0,0,self.pen_size,self.pen_size,
                                             pen=QPen(QColor('white')),
