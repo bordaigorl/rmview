@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import *
 import paramiko
 import struct
 import time
+import re
 from binascii import hexlify
 
 import sys
@@ -140,6 +141,19 @@ class rMConnect(QRunnable):
     except Exception as e:
       self._exception = e
 
+  def _getVersion(self):
+    _, out, _ = self.client.exec_command("cat /sys/devices/soc0/machine")
+    rmv = out.read().decode("utf-8")
+    version = re.fullmatch(r"reMarkable(?: Prototype)? (\d+)(\.\d+)*\n", rmv)
+    if version is not None:
+      version = int(version[1])
+    return version, rmv.strip()
+
+  def _getSwVersion(self):
+    _, out, _ = self.client.exec_command("cat /etc/version")
+    return int(out.read().decode("utf-8"))
+
+
   @pyqtSlot()
   def run(self):
     self._initialize()
@@ -153,6 +167,8 @@ class rMConnect(QRunnable):
       self.client.connect(self.address, **self.options)
       log.info("Connected to {}".format(self.address))
       self.client.hostname = self.address
+      self.client.deviceVersion, self.client.fullDeviceVersion = self._getVersion()
+      self.client.softwareVersion = self._getSwVersion()
       self.signals.onConnect.emit(self.client)
     except Exception as e:
       log.error("Could not connect to %s: %s", self.address, e)
