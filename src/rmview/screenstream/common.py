@@ -5,6 +5,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 from twisted.internet import reactor
+from twisted.internet.error import ConnectionRefusedError
 
 from rmview.rmparams import *
 from rmview.rfb import *
@@ -76,5 +77,8 @@ class VncFactory(RFBFactory):
     reactor.callFromThread(reactor.stop)
 
   def clientConnectionFailed(self, connector, reason):
-    self.signals.onFatalError.emit(Exception("Connection failed: " + str(reason)))
+    if reason.check(ConnectionRefusedError):
+      self.signals.onFatalError.emit(Exception("It seems the tablet is refusing to connect.\nIf you are using the ScreenShare backend please make sure you enabled it on the tablet, before running rmview."))
+    else:
+      self.signals.onFatalError.emit(Exception("Connection failed: " + str(reason)))
     reactor.callFromThread(reactor.stop)
