@@ -40,7 +40,7 @@ setup(
   classifiers=[
     'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
   ],
-  packages=['rmview'],
+  packages=['rmview', 'rmview.screenstream'],
   install_requires=['pyqt5', 'paramiko', 'twisted'],
   extras_require = { 'tunnel': ['sshtunnel'] },
   entry_points={
