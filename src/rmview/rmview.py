@@ -3,7 +3,9 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 from . import resources
-from .workers import FrameBufferWorker, KEY_Left, KEY_Right, KEY_Escape
+from .screenstream.common import KEY_Left, KEY_Right, KEY_Escape
+from .screenstream.vnc import VncStreamer
+from .screenstream.screenshare import ScreenShareStream
 from .pentracker import PenTracker
 from .connection import rMConnect, RejectNewHostKey, AddNewHostKey, UnknownHostKeyException
 from .viewer import QtImageViewer
@@ -287,67 +289,42 @@ class rMViewApp(QApplication):
     self.ssh = ssh
     self.viewer.setWindowTitle("rMview - " + ssh.hostname)
 
-    _,out,_ = ssh.exec_command("cat /sys/devices/soc0/machine")
-    rmv = out.read().decode("utf-8")
-    version = re.fullmatch(r"reMarkable(?: Prototype)? (\d+)(\.\d+)*\n", rmv)
-    if version is None or version[1] not in ["1", "2"]:
-      log.error("Device is unsupported: '%s' [%s]", rmv.strip(), version[1] if version else "unknown device")
-      QMessageBox.critical(None, "Unsupported device", "The detected device is '%s'.\nrmView currently only supports reMarkable 1 and 2." % rmv.strip())
+    log.info("Detected %s", ssh.fullDeviceVersion)
+    version = ssh.deviceVersion
+    if version not in [1, 2]:
+      log.error("Device is unsupported: '%s' [%s]", ssh.fullDeviceVersion, version or "unknown device")
+      QMessageBox.critical(None, "Unsupported device", "The detected device is '%s'.\nrmView currently only supports reMarkable 1 and 2." % ssh.fullDeviceVersion)
       self.quit()
       return
 
-    version = int(version[1])
-
-    # check needed files are in place
-    _,out,_ = ssh.exec_command("[ -x $HOME/rM-vnc-server-standalone ]")
-    if out.channel.recv_exit_status() != 0:
-      mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing some needed components.')
-      icon = QPixmap(":/assets/problem.svg")
-      icon.setDevicePixelRatio(self.devicePixelRatio())
-      mbox.setIconPixmap(icon)
-      mbox.setInformativeText(
-        "To work properly, rmView needs the rM-vnc-server-standalone program "\
-        "to be installed on your tablet.\n"\
-        "You can install them manually, or let rmView do the work for you by pressing 'Auto Install' below.\n\n"\
-        "If you are unsure, please consult the documentation.")
-      mbox.addButton(QMessageBox.Cancel)
-      mbox.addButton(QMessageBox.Help)
-      mbox.addButton("Settings...", QMessageBox.ResetRole)
-      mbox.addButton("Auto Install", QMessageBox.AcceptRole)
-      mbox.setDefaultButton(0)
-      answer = mbox.exec()
-      log.info(answer)
-      if answer == 1:
-        log.info("Installing...")
-        try:
-          sftp = ssh.open_sftp()
-          from stat import S_IXUSR
-          fo = QFile(':bin/rM%d-vnc-server-standalone' % version)
-          fo.open(QIODevice.ReadOnly)
-          sftp.putfo(fo, 'rM-vnc-server-standalone')
-          fo.close()
-          sftp.chmod('rM-vnc-server-standalone', S_IXUSR)
-          log.info("Installation successful!")
-        except Exception as e:
-          log.error('%s %s', type(e), e)
-          QMessageBox.critical(None, "Error", 'There has been an error while trying to install the required components on the tablet.\n%s\n.' % e)
-          self.quit()
-          return
-      elif answer == QMessageBox.Cancel:
-        self.quit()
-        return
-      elif answer == QMessageBox.Help:
-        QDesktopServices.openUrl(QUrl("https://github.com/bordaigorl/rmview"))
-        self.quit()
-        return
+    backend = self.config.get('backend', 'auto')
+    if backend == 'auto':
+      if ssh.softwareVersion >= SW_VER_TIMESTAMPS['2.9']:
+        backend = 'screenshare'
       else:
-        self.openSettings(prompt=False)
-        return
+        backend = 'vncserver'
+        if ssh.softwareVersion >= SW_VER_TIMESTAMPS['2.7']:
+          log.warning("Detected version 2.7 or 2.8. The server might not work with these versions.")
 
-    self.fbworker = FrameBufferWorker(ssh, ssh_config=self.config.get('ssh', {}),
-                                      delay=self.config.get('fetch_frame_delay'))
+    log.info("Using backend '%s'", backend)
+    if backend == 'screenshare':
+      self.fbworker = ScreenShareStream(ssh)
+      # does not support key/pointer events
+      self.leftAction.setEnabled(False)
+      self.rightAction.setEnabled(False)
+      self.homeAction.setEnabled(False)
+    elif backend == 'vncserver':
+      self.fbworker = VncStreamer(ssh, ssh_config=self.config.get('ssh', {}),
+                                       delay=self.config.get('fetch_frame_delay'))
+
     self.fbworker.signals.onNewFrame.connect(self.onNewFrame)
     self.fbworker.signals.onFatalError.connect(self.frameError)
+
+    # check needed files are in place
+    if self.fbworker.needsDependencies():
+      if not self.promptDependenciesInstall():
+        return
+
     self.threadpool.start(self.fbworker)
     if self.config.get("forward_mouse_events", False):
       self.viewer.pointerEvent.connect(self.fbworker.pointerEvent)
@@ -369,6 +346,43 @@ class rMViewApp(QApplication):
     self.penworker.signals.onPenNear.connect(self.showPenNow)
     self.penworker.signals.onPenFar.connect(self.hidePen)
 
+
+  def promptDependenciesInstall(self):
+    mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing some needed components.')
+    icon = QPixmap(":/assets/problem.svg")
+    icon.setDevicePixelRatio(self.devicePixelRatio())
+    mbox.setIconPixmap(icon)
+    mbox.setInformativeText(
+      "To work properly, rmView needs some dependencies "\
+      "to be installed on your tablet.\n"\
+      "You can install them manually, or let rmView do the work for you by pressing 'Auto Install' below.\n\n"\
+      "If you are unsure, please consult the documentation.")
+    mbox.addButton(QMessageBox.Cancel)
+    mbox.addButton(QMessageBox.Help)
+    mbox.addButton("Settings...", QMessageBox.ResetRole)
+    mbox.addButton("Auto Install", QMessageBox.AcceptRole)
+    mbox.setDefaultButton(0)
+    answer = mbox.exec()
+    log.info(answer)
+    if answer == 1:
+      log.info("Installing...")
+      try:
+        self.fbworker.installDependencies()
+        log.info("Installation successful!")
+        return True
+      except Exception as e:
+        log.error('%s %s', type(e), e)
+        QMessageBox.critical(None, "Error", 'There has been an error while trying to install the required components on the tablet.\n%s\n.' % e)
+        self.quit()
+    elif answer == QMessageBox.Cancel:
+      self.quit()
+    elif answer == QMessageBox.Help:
+      QDesktopServices.openUrl(QUrl("https://github.com/bordaigorl/rmview"))
+      self.quit()
+    else:
+      self.openSettings(prompt=False)
+
+    return False
 
   @pyqtSlot(QImage)
   def onNewFrame(self, image):

@@ -1,98 +1,20 @@
-from typing import Tuple
-
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-
-from .rmparams import *
-
-import paramiko
-import struct
-import time
-
-import sys
-import os
 import logging
 import atexit
 
-from twisted.internet.protocol import Protocol
-from twisted.internet import protocol, reactor, threads
-from twisted.application import internet, service
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 
-from .rfb import *
+from twisted.internet import reactor
+from twisted.application import internet
 
-try:
-  IMG_FORMAT = QImage.Format_Grayscale16
-except Exception:
-  IMG_FORMAT = QImage.Format_RGB16
-BYTES_PER_PIXEL = 2
+from rmview.screenstream.common import *
+# from rmview.rmparams import *
+# from rmview.rfb import *
 
 log = logging.getLogger('rmview')
 
 
-class FBWSignals(QObject):
-  onFatalError = pyqtSignal(Exception)
-  onNewFrame = pyqtSignal(QImage)
-
-
-class RFB(RFBClient):
-  img = QImage(WIDTH, HEIGHT, IMG_FORMAT)
-  painter = QPainter(img)
-
-  def __init__(self, signals):
-    super(RFB, self).__init__()
-    self.signals = signals
-
-  def emitImage(self):
-    self.signals.onNewFrame.emit(self.img)
-
-  def vncConnectionMade(self):
-    log.info("Connection to VNC server has been established")
-
-    # self.signals = self.factory.signals
-    self.setEncodings([
-      HEXTILE_ENCODING,
-      CORRE_ENCODING,
-      PSEUDO_CURSOR_ENCODING,
-      RRE_ENCODING,
-      RAW_ENCODING ])
-    # time.sleep(.1) # get first image without artifacts
-    self.framebufferUpdateRequest()
-
-  def sendPassword(self, password):
-    self.signals.onFatalError.emit(Exception("Unsupported password request."))
-
-  def commitUpdate(self, rectangles=None):
-    self.signals.onNewFrame.emit(self.img)
-    self.framebufferUpdateRequest(incremental=1)
-
-  def updateRectangle(self, x, y, width, height, data):
-    self.painter.drawImage(x,y,QImage(data, width, height, width * BYTES_PER_PIXEL, IMG_FORMAT))
-
-
-class RFBFactory(RFBFactory):
-  protocol = RFB
-  instance = None
-
-  def __init__(self, signals):
-    super(RFBFactory, self).__init__()
-    self.signals = signals
-
-  def buildProtocol(self, addr):
-    self.instance = RFB(self.signals)
-    self.instance.factory = self
-    return self.instance
-
-  def clientConnectionLost(self, connector, reason):
-    log.warning("Disconnected: %s", reason.getErrorMessage())
-    reactor.callFromThread(reactor.stop)
-
-  def clientConnectionFailed(self, connector, reason):
-    self.signals.onFatalError.emit(Exception("Connection failed: " + str(reason)))
-    reactor.callFromThread(reactor.stop)
-
-
-class FrameBufferWorker(QRunnable):
+class VncStreamer(QRunnable):
 
   _stop = False
 
@@ -101,16 +23,29 @@ class FrameBufferWorker(QRunnable):
   vncClient = None
   sshTunnel = None
 
-  def __init__(self, ssh, ssh_config, delay=None, lz4_path=None, img_format=IMG_FORMAT):
-    super(FrameBufferWorker, self).__init__()
+  def __init__(self, ssh, ssh_config, delay=None):
+    super(VncStreamer, self).__init__()
     self.ssh = ssh
     self.ssh_config = ssh_config
-    self.img_format = img_format
     self.use_ssh_tunnel = self.ssh_config.get("tunnel", False)
 
     self._vnc_server_already_running = False
 
-    self.signals = FBWSignals()
+    self.signals = ScreenStreamSignals()
+
+  def needsDependencies(self):
+    _, out, _ = self.ssh.exec_command("[ -x $HOME/rM-vnc-server-standalone ]")
+    log.info("%s %s", QFile, QIODevice)
+    return out.channel.recv_exit_status() != 0
+
+  def installDependencies(self):
+    sftp = self.ssh.open_sftp()
+    from stat import S_IXUSR
+    fo = QFile(':bin/rM%d-vnc-server-standalone' % ssh.deviceVersion)
+    fo.open(QIODevice.ReadOnly)
+    sftp.putfo(fo, 'rM-vnc-server-standalone')
+    fo.close()
+    sftp.chmod('rM-vnc-server-standalone', S_IXUSR)
 
   def stop(self):
     if self._stop:
@@ -161,7 +96,7 @@ class FrameBufferWorker(QRunnable):
     log.info("Establishing connection to remote VNC server on %s:%s" % (vnc_server_host,
                                                                         vnc_server_port))
     try:
-      self.factory = RFBFactory(self.signals)
+      self.factory = VncFactory(self.signals)
       self.vncClient = internet.TCPClient(vnc_server_host, vnc_server_port, self.factory)
       self.vncClient.startService()
       reactor.run(installSignalHandlers=0)
@@ -231,7 +166,7 @@ class FrameBufferWorker(QRunnable):
     atexit.register(self.stop)
 
 
-  def _setup_ssh_tunnel_if_configured(self) -> Tuple[str, int]:
+  def _setup_ssh_tunnel_if_configured(self):
     """
     Set up and start SSH tunnel (if configured).
     """
@@ -292,7 +227,7 @@ class FrameBufferWorker(QRunnable):
     try:
       self.factory.instance.emitImage()
     except Exception:
-      log.warning("Not ready to pause")
+      log.warning("Not ready to resume")
 
   # @pyqtSlot(int,int,int)
   def pointerEvent(self, x, y, button):
