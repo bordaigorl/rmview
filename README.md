@@ -8,14 +8,15 @@
 * Demo [:rocket: here][demo]
 * Fast streaming of the screen of your reMarkable to a window in your computer
 * Support for reMarkable 1 and 2
+* Works with software version pre 2.7
+* Compatible with ScreenShare (post 2.9)
 * UI for zooming, panning, rotating
 * Pen tracking: a pointer follows the position of the pen when hovering on the reMarkable
 * Clone a frame into separate window for reference
 * Save screenshots as PNG
 
-> :warning: **For reMarkable 2 users** :warning::
-> rMview should work out of the box with the stock firmware.
-> If you use [`rm2fb`](https://github.com/ddvk/remarkable2-framebuffer) there are known compatibilities issues that are [being addressed](https://github.com/pl-semiotics/rM-vnc-server/issues/5).
+> :warning: **Update 2.9+ users** :warning::
+> To use rmview with the ScreenShare feature you have to **first** start the ScreenShare from the tablet, and then start rmview.
 
 
 
@@ -104,6 +105,7 @@ All the settings are optional.
 | Setting key              | Values                                                  | Default       |
 | ------------------------ | ------------------------------------------------------- | ------------- |
 | `ssh`                    | Connection parameters (see below)                       | `{}`          |
+| `backend`                | `"auto"`, `"screenshare"`, `"vncserver"`                | `"auto"`      |
 | `orientation`            | `"landscape"`, `"portrait"`, `"auto"`                   | `"landscape"` |
 | `pen_size`               | diameter of pointer in px                               | `15`          |
 | `pen_color`              | color of pointer and trail                              | `"red"`       |
@@ -113,13 +115,15 @@ All the settings are optional.
 | `show_pen_on_lift`       | if true, the pointer is shown when lifting the pen      | `true`        |
 | `forward_mouse_events`   | Send mouse events to tablet (see below)                 | `false`       |
 
+**PLEASE NOTE:**
+When `backend` is `auto`, if the tablet is using version 2.9 and above then `screenshare` is used;
+otherwise `vncserver` is selected.
+Note that currently `screenshare` is only compatible with version 2.9 and above,
+and `vncserver` with version 2.6 and below.
+
 If `forward_mouse_events` is enabled, clicks and mouse drags on the main window
 will be sent to the tablet as touch events,
 mouse drags while pressing <kbd>CTRL</kbd> will be sent as pen events, allowing drawing.
-
-**PLEASE NOTE**: due to how the VNC server handles this at the moment, you may experience unresponsiveness of the physical buttons on the tablet.
-This is because the palm rejection mechanism can get confused by the synthetic events.
-To resolve this, it is sufficient to move the physical pen close to the tablet and then away from it, and the buttons should go back to working properly.
 
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
