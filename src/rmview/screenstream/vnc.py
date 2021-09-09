@@ -7,7 +7,7 @@ from PyQt5.QtCore import *
 from twisted.internet import reactor
 from twisted.application import internet
 
-from rmview.screenstream.common import *
+from .common import *
 # from rmview.rmparams import *
 # from rmview.rfb import *
 

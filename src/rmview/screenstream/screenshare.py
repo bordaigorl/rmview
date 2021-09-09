@@ -16,7 +16,7 @@ from twisted.internet.protocol import Protocol
 from twisted.internet import protocol, reactor, ssl
 from twisted.application import internet, service
 
-from rmview.screenstream.common import *
+from .common import *
 
 log = logging.getLogger('rmview')
 

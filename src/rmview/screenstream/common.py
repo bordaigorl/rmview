@@ -7,8 +7,8 @@ from PyQt5.QtCore import *
 from twisted.internet import reactor
 from twisted.internet.error import ConnectionRefusedError
 
-from rmview.rmparams import *
-from rmview.rfb import *
+from ..rmparams import *
+from ..rfb import *
 
 try:
   IMG_FORMAT = QImage.Format_Grayscale16
