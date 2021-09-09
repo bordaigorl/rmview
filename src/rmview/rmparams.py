@@ -3,6 +3,12 @@ HEIGHT = 1872
 PIXELS_NUM = WIDTH * HEIGHT
 TOTAL_BYTES = PIXELS_NUM * 2
 
+SW_VER_TIMESTAMPS = {
+  '2.7': 20210504114631,
+  '2.9': 20210709092503
+}
+
+
 # evtype_sync = 0
 e_type_key = 1
 e_type_abs = 3
