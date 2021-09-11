@@ -41,7 +41,7 @@ setup(
     'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
   ],
   packages=['rmview', 'rmview.screenstream'],
-  install_requires=['pyqt5', 'paramiko', 'twisted'],
+  install_requires=['pyqt5', 'paramiko', 'twisted', 'pyOpenSSL'],
   extras_require = { 'tunnel': ['sshtunnel'] },
   entry_points={
     'console_scripts':['rmview = rmview.rmview:rmViewMain']
