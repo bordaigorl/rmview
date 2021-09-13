@@ -249,6 +249,9 @@ class rMViewApp(QApplication):
     """
     Emit a warning message if config file is readable by others.
     """
+    if file_path is None:
+      return
+      
     st_mode = os.stat(file_path).st_mode
 
     if bool(st_mode & stat.S_IROTH) or bool(st_mode & stat.S_IWOTH):
