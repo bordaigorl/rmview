@@ -221,6 +221,7 @@ class rMViewApp(QApplication):
     auth_method = self.config['ssh'].get('auth_method')
     if auth_method == 'password':
       self.config['ssh']['look_for_keys'] = False
+      self.config['ssh']['allow_agent'] = False
     if (auth_method == 'password' and 'password' not in self.config['ssh']) or \
        (auth_method is None and 'password' not in self.config['ssh'] and 'key' not in self.config['ssh']):
       password, ok = QInputDialog.getText(self.viewer, "Configuration","reMarkable password:", QLineEdit.Password)
