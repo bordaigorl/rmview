@@ -41,6 +41,11 @@ ZRLE_ENCODING =                 16
 PSEUDO_CURSOR_ENCODING =        -239
 PSEUDO_DESKTOP_SIZE_ENCODING =  -223
 
+#auth types
+NO_AUTH = 1
+VNC_AUTH = 2
+RM_AUTH = 100
+
 #keycodes
 #for KeyEvent()
 KEY_BackSpace = 0xff08
@@ -213,18 +218,18 @@ class RFBClient(Protocol):
 
     def _handleSecurityTypes(self, block):
         types = unpack("!%dB" % len(block), block)
-        SUPPORTED_TYPES = (1, 2, 100)
+        SUPPORTED_TYPES = (NO_AUTH, VNC_AUTH, RM_AUTH)
         valid_types = [sec_type for sec_type in types if sec_type in SUPPORTED_TYPES]
         if valid_types:
             sec_type = max(valid_types)
             self.transport.write(pack("!B", sec_type))
-            if sec_type == 1:
+            if sec_type == NO_AUTH:
                 if self._version < 3.8:
                     self._doClientInitialization()
                 else:
                     self.expect(self._handleVNCAuthResult, 4)
-            if sec_type == 100:
-                self.expect(self._handleRMAuth,4) 
+            elif sec_type == RM_AUTH:
+                self.expect(self._handleRMAuth, 4) 
             else:
                 self.expect(self._handleVNCAuth, 16)
         else:
@@ -236,15 +241,19 @@ class RFBClient(Protocol):
         #TODO: the security is not checked atm, so an empty challenged is sent
         #the algo for the challenge is a sha256(timestamp+sha256(usedId))
         #the timestamp comes from the udp broadcast on port 5901
-        self.transport.write(pack("!I", 32)) #challenge length
-        self.transport.write(b'\x00'*32) #challenge
+        challenge = self.getRMChallenge()
+        self.transport.write(pack("!I", len(challenge))) #challenge length
+        self.transport.write(challenge) #challenge
         self.expect(self._handleRMResult, 1)
 
     def _handleRMResult(self, block):
-        if block[0] != 0:
-            log.msg("auth failed, currently ignored")
-        self._doClientInitialization()
+        (result, ) = unpack("!B", block)
 
+        if result != 0:
+            log.msg("auth failed, currently ignored")
+            print('failed')
+
+        self._doClientInitialization()
 
     def _handleAuth(self, block):
         (auth,) = unpack("!I", block)
@@ -830,6 +839,10 @@ class RFBClient(Protocol):
     def copy_text(self, text):
         """The server has new ASCII text in its cut buffer.
            (aka clipboard)"""
+
+    def getRMChallenge(self):
+        return bytes(32)
+        
 
 class RFBFactory(protocol.ClientFactory):
     """A factory for remote frame buffer connections."""
