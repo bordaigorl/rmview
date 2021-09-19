@@ -22,11 +22,13 @@ log = logging.getLogger('rmview')
 class ScreenStreamSignals(QObject):
   onFatalError = pyqtSignal(Exception)
   onNewFrame = pyqtSignal(QImage)
+  onChallengeReceived = pyqtSignal(bytes)
 
 
 class VncClient(RFBClient):
   img = QImage(WIDTH, HEIGHT, IMG_FORMAT)
   painter = QPainter(img)
+  challenge = bytes(32)
 
   def __init__(self, signals):
     super(VncClient, self).__init__()
@@ -58,6 +60,9 @@ class VncClient(RFBClient):
   def updateRectangle(self, x, y, width, height, data):
     self.painter.drawImage(x,y,QImage(data, width, height, width * BYTES_PER_PIXEL, IMG_FORMAT))
 
+  def getRMChallenge(self):
+    return self.factory.challenge
+
 
 class VncFactory(RFBFactory):
   protocol = VncClient
@@ -82,3 +87,7 @@ class VncFactory(RFBFactory):
     else:
       self.signals.onFatalError.emit(Exception("Connection failed: " + str(reason)))
     reactor.callFromThread(reactor.stop)
+
+  def setChallenge(self, challenge):
+    self.challenge = challenge
+

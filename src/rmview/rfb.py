@@ -236,11 +236,6 @@ class RFBClient(Protocol):
             log.msg("unknown security types: %s" % repr(types))
 
     def _handleRMAuth(self, block):
-        #4 zero bytes ignored
-
-        #TODO: the security is not checked atm, so an empty challenged is sent
-        #the algo for the challenge is a sha256(timestamp+sha256(usedId))
-        #the timestamp comes from the udp broadcast on port 5901
         challenge = self.getRMChallenge()
         self.transport.write(pack("!I", len(challenge))) #challenge length
         self.transport.write(challenge) #challenge
@@ -250,8 +245,7 @@ class RFBClient(Protocol):
         (result, ) = unpack("!B", block)
 
         if result != 0:
-            log.msg("auth failed, currently ignored")
-            print('failed')
+            raise Exception("authentication failed")
 
         self._doClientInitialization()
 
@@ -841,7 +835,7 @@ class RFBClient(Protocol):
            (aka clipboard)"""
 
     def getRMChallenge(self):
-        return bytes(32)
+        raise Exception("should be implemented in the subclass")
         
 
 class RFBFactory(protocol.ClientFactory):
