@@ -32,7 +32,7 @@ class genResourcesEggInfo(egg_info):
 
 setup(
   name='rmview',
-  version='2.1',
+  version='2.2',
   url='https://github.com/bordaigorl/rmview',
   description='rMview: a fast live viewer for reMarkable',
   author='bordaigorl',
@@ -40,8 +40,9 @@ setup(
   classifiers=[
     'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
   ],
-  packages=['rmview'],
-  install_requires=['pyqt5', 'paramiko', 'twisted', 'pyOpenSSL'],
+  packages=['rmview', 'rmview.screenstream'],
+  install_requires=['pyqt5', 'paramiko', 'twisted[tls]'],
+  extras_require = { 'tunnel': ['sshtunnel'] },
   entry_points={
     'console_scripts':['rmview = rmview.rmview:rmViewMain']
   },

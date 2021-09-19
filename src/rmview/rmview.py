@@ -3,7 +3,10 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 from . import resources
-from .workers import FrameBufferWorker, PointerWorker
+from .screenstream.common import KEY_Left, KEY_Right, KEY_Escape
+from .screenstream.vnc import VncStreamer
+from .screenstream.screenshare import ScreenShareStream
+from .pentracker import PenTracker
 from .connection import rMConnect, RejectNewHostKey, AddNewHostKey, UnknownHostKeyException
 from .viewer import QtImageViewer
 
@@ -13,11 +16,14 @@ from .rmparams import *
 
 import sys
 import os
+import stat
 import json
 import re
+import signal
+import time
 
 import logging
-logging.basicConfig(format='%(message)s')
+logging.basicConfig(format='[%(levelname)s] %(message)s')
 log = logging.getLogger('rmview')
 
 
@@ -31,9 +37,14 @@ class rMViewApp(QApplication):
   penworker = None
   ssh = None
 
+  streaming = True
+  right_mode = True
+
   pen = None
   pen_size = 15
   trail = None  # None: disabled, False: inactive, True: active
+
+  cloned_frames = set()
 
   def __init__(self, args):
     super(rMViewApp, self).__init__(args)
@@ -61,6 +72,9 @@ class rMViewApp(QApplication):
         log.error("Malformed configuration in %s: %s" % (f, e))
       except Exception as e:
         log.debug("Configuration failure in %s: %s" % (f, e))
+
+    self._checkConfigFilePermissions(self.config_file)
+
     self.config.setdefault('ssh', {})
     self.pen_size = self.config.get('pen_size', self.pen_size)
     self.trailPen = QPen(QColor(self.config.get('pen_color', 'red')), max(1, self.pen_size // 3))
@@ -68,61 +82,92 @@ class rMViewApp(QApplication):
     self.trailPen.setJoinStyle(Qt.RoundJoin)
     self.trailDelay = self.config.get('pen_trail', 200)
     self.trail = None if self.trailDelay == 0 else False
+    self.right_mode = self.config.get('right_mode', True)
 
     self.bar = QMenuBar()
     self.setWindowIcon(QIcon(':/assets/rmview.svg'))
 
     self.viewer = QtImageViewer()
+
     if 'background_color' in self.config:
       self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
 
-    act = QAction('Clone current frame', self)
-    act.triggered.connect(self.cloneViewer)
-    self.viewer.menu.addAction(act)
+    ### ACTIONS
+    self.cloneAction = QAction('Clone current frame', self.viewer)
+    self.cloneAction.setShortcut(QKeySequence.New)
+    self.cloneAction.triggered.connect(self.cloneViewer)
+    self.viewer.addAction(self.cloneAction)
     ###
+    self.pauseAction = QAction('Pause Streaming', self.viewer)
+    self.pauseAction.setShortcut('Ctrl+P')
+    self.pauseAction.triggered.connect(self.toggleStreaming)
+    self.viewer.addAction(self.pauseAction)
+    ###
+    self.settingsAction = QAction('Settings...', self.viewer)
+    self.settingsAction.triggered.connect(self.openSettings)
+    self.viewer.addAction(self.settingsAction)
+    ###
+    self.quitAction = QAction('Quit', self.viewer)
+    self.quitAction.setShortcut('Ctrl+Q')
+    self.quitAction.triggered.connect(self.quit)
+    self.viewer.addAction(self.quitAction)
+    ###
+    self.leftAction = QAction('Emulate Left Button', self)
+    self.leftAction.setShortcut('Ctrl+Left')
+    self.leftAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Left))
+    self.viewer.addAction(self.leftAction)
+    ###
+    self.rightAction = QAction('Emulate Right Button', self)
+    self.rightAction.setShortcut('Ctrl+Right')
+    self.rightAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Right))
+    self.viewer.addAction(self.rightAction)
+    ###
+    self.homeAction = QAction('Emulate Central Button', self)
+    self.homeAction.setShortcut(QKeySequence.Cancel)
+    self.homeAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Escape))
+    self.viewer.addAction(self.homeAction)
+
+
+    ### VIEWER MENU ADDITIONS
+    self.viewer.menu.addAction(self.cloneAction)
+    self.viewer.menu.addAction(self.pauseAction)
+    # inputMenu = self.viewer.menu.addMenu("Input")
+    # inputMenu.addAction(self.leftAction)
+    # inputMenu.addAction(self.rightAction)
+    # inputMenu.addAction(self.homeAction)
     self.viewer.menu.addSeparator() # --------------------------
-    ###
-    act = QAction('Settings...', self)
-    act.triggered.connect(self.openSettings)
-    self.viewer.menu.addAction(act)
-    ###
+    self.viewer.menu.addAction(self.settingsAction)
     self.viewer.menu.addSeparator() # --------------------------
-    ###
-    act = QAction('Quit', self)
-    act.setShortcut('Ctrl+Q')
-    act.triggered.connect(self.quit)
-    self.viewer.menu.addAction(act)
+    self.viewer.menu.addAction(self.quitAction)
 
     self.viewer.setWindowTitle("rMview")
     self.viewer.show()
 
-    self.orient = None
+    # Display connecting image until we successfuly connect
+    self.viewer.setImage(QPixmap(':/assets/connecting.png'))
+
+    self.orient = 0
     orient = self.config.get('orientation', 'landscape')
     if orient == 'landscape':
       self.viewer.rotateCW()
       self.autoResize(WIDTH / HEIGHT)
     elif orient == 'portrait':
       self.autoResize(HEIGHT / WIDTH)
-    else: # orient
+    else: # auto
       self.autoResize(HEIGHT / WIDTH)
-      self.orient = True
+      self.orient = 1 if orient == "auto_on_load" else 2
 
-    # Setup global menu
-    menu = self.bar.addMenu('&View')
-    act = QAction('Rotate clockwise', self)
-    act.setShortcut('Ctrl+Right')
-    act.triggered.connect(self.viewer.rotateCW)
-    menu.addAction(act)
-    act = QAction('Rotate counter-clockwise', self)
-    act.setShortcut('Ctrl+Left')
-    act.triggered.connect(self.viewer.rotateCCW)
-    menu.addAction(act)
-    menu.addSeparator()
-    act = QAction('Save screenshot', self)
-    act.setShortcut('Ctrl+S')
-    act.triggered.connect(self.viewer.screenshot)
-    menu.addAction(act)
-    menu.addSeparator()
+    # # Setup global menu
+    # menu = self.bar.addMenu('&View')
+    # menu.addAction(self.viewer.rotCWAction)
+    # menu.addAction(self.viewer.rotCCWAction)
+    # menu.addSeparator()
+    # menu.addAction(self.viewer.screenshotAction)
+    # menu.addSeparator()
+    # menu.addAction(self.pauseAction)
+    # menu.addAction(self.leftAction)
+    # menu.addAction(self.rightAction)
+    # menu.addAction(self.homeAction)
 
 
     if not self.ensureConnConfig(): # I know, it's ugly
@@ -134,28 +179,25 @@ class rMViewApp(QApplication):
     self.requestConnect()
 
   def detectOrientation(self, image):
-    c = image.pixel
-    portrait = False
-    # print(c(48, 47) , c(72, 72) , c(55, 55) , c(64, 65))
-    if c(48, 47) == 4278190080 and  c(72, 72) == 4278190080 and \
-       (c(55, 55) == 4294967295 or c(64, 65) == 4294967295):
-       if c(61, 1812) != 4278190080 or c(5,5) == 4278190080:
-         portrait = True
-    elif c(1356, 47) == 4278190080 and c(1329, 72) == 4278190080 and \
-       (c(1348, 54) == 4294967295 or c(1336, 65) == 4294967295):
-      portrait = True
-    elif c(5,5) == 4278190080:
-      portrait = True
-    elif c(40,47) == 4278190080 and c(40,119) == 4278190080:
-      portrait = True
-    if portrait:
-       self.viewer.portrait()
-       self.autoResize(HEIGHT / WIDTH)
+    (tl,bl,tr) = find_circle_buttons(image)
+    if tl is None and bl is None and tr is None:
+      portrait = True # We are in the main screen/settings
+    elif bl is None:
+      portrait = self.right_mode
     else:
-       self.viewer.landscape()
-       self.autoResize(WIDTH / HEIGHT)
+      portrait = False
+
+    if portrait:
+      if not self.viewer.is_portrait():
+        self.viewer.portrait()
+        self.autoResize(HEIGHT / WIDTH)
+    elif not self.viewer.is_landscape():
+        self.viewer.landscape()
+        self.autoResize(WIDTH / HEIGHT)
 
   def autoResize(self, ratio):
+    if self.viewer.windowState() & (QWindow.FullScreen | QWindow.Maximized):
+      return
     dg = self.desktop().availableGeometry(self.viewer)
     ds = dg.size() * 0.7
     if ds.width() * ratio > ds.height():
@@ -194,8 +236,34 @@ class rMViewApp(QApplication):
       if not os.path.isfile(self.LOCAL_KNOWN_HOSTS):
         open(self.LOCAL_KNOWN_HOSTS, 'a').close()
 
-    log.info(self.config)
+    if log.isEnabledFor(logging.DEBUG):
+      import copy
+      config_sanitized = copy.deepcopy(self.config)
+      if "password" in self.config.get("ssh", {}):
+          config_sanitized["ssh"]["password"] = config_sanitized["ssh"]["password"][:3] + "*****"
+      log.debug("Config values: %s" % (str(config_sanitized)))
+
     return True
+
+  def _checkConfigFilePermissions(self, file_path):
+    """
+    Emit a warning message if config file is readable by others.
+    """
+    if file_path is None:
+      return
+      
+    st_mode = os.stat(file_path).st_mode
+
+    if bool(st_mode & stat.S_IROTH) or bool(st_mode & stat.S_IWOTH):
+      file_permissions = str(oct(st_mode)[4:])
+
+      if file_permissions.startswith("0") and len(file_permissions) == 4:
+        file_permissions = file_permissions[1:]
+
+      log.warn("Config file \"%s\" is readable by others (permissions=%s). If your config "
+                "file contains secrets (e.g. password) you are strongly encouraged to make sure "
+                "it's not readable by other users (chmod 600 %s)" % (file_path, file_permissions,
+                                                                     file_path))
 
   def requestConnect(self, host_key_policy=None):
     self.viewer.setWindowTitle("rMview - Connecting...")
@@ -222,29 +290,55 @@ class rMViewApp(QApplication):
   @pyqtSlot(object)
   def connected(self, ssh):
     self.ssh = ssh
-    self.viewer.setWindowTitle("rMview - " + self.config.get('ssh').get('address'))
+    self.viewer.setWindowTitle("rMview - " + ssh.hostname)
 
-    _,out,_ = ssh.exec_command("cat /sys/devices/soc0/machine")
-    rmv = out.read().decode("utf-8")
-    version = re.fullmatch(r"reMarkable(?: Prototype)? (\d+)(\.\d+)*\n", rmv)
-    if version is None or version[1] not in ["1", "2"]:
-      log.error("Device is unsupported: '%s' [%s]", rmv.strip(), version[1] if version else "unknown device")
-      QMessageBox.critical(None, "Unsupported device", "The detected device is '%s'.\nrmView currently only supports reMarkable 1 and 2." % rmv.strip())
+    log.info("Detected %s", ssh.fullDeviceVersion)
+    version = ssh.deviceVersion
+    if version not in [1, 2]:
+      log.error("Device is unsupported: '%s' [%s]", ssh.fullDeviceVersion, version or "unknown device")
+      QMessageBox.critical(None, "Unsupported device", "The detected device is '%s'.\nrmView currently only supports reMarkable 1 and 2." % ssh.fullDeviceVersion)
       self.quit()
       return
 
-    version = int(version[1])
+    backend = self.config.get('backend', 'auto')
+    if backend == 'auto':
+      if ssh.softwareVersion >= SW_VER_TIMESTAMPS['2.9']:
+        backend = 'screenshare'
+      else:
+        backend = 'vncserver'
+        if ssh.softwareVersion >= SW_VER_TIMESTAMPS['2.7']:
+          log.warning("Detected version 2.7 or 2.8. The server might not work with these versions.")
 
-    self.fbworker = FrameBufferWorker(ssh, delay=self.config.get('fetch_frame_delay'))
+    log.info("Using backend '%s'", backend)
+    if backend == 'screenshare':
+      self.fbworker = ScreenShareStream(ssh)
+      # does not support key/pointer events
+      self.leftAction.setEnabled(False)
+      self.rightAction.setEnabled(False)
+      self.homeAction.setEnabled(False)
+    elif backend == 'vncserver':
+      self.fbworker = VncStreamer(ssh, ssh_config=self.config.get('ssh', {}),
+                                       delay=self.config.get('fetch_frame_delay'))
+
     self.fbworker.signals.onNewFrame.connect(self.onNewFrame)
     self.fbworker.signals.onFatalError.connect(self.frameError)
-    self.threadpool.start(self.fbworker)
 
-    self.penworker = PointerWorker(ssh, path="/dev/input/event%d" % (version-1))
+    # check needed files are in place
+    if self.fbworker.needsDependencies():
+      if not self.promptDependenciesInstall():
+        return
+
+    self.threadpool.start(self.fbworker)
+    if self.config.get("forward_mouse_events", False):
+      self.viewer.pointerEvent.connect(self.fbworker.pointerEvent)
+
+    self.penworker = PenTracker(ssh, path="/dev/input/event%d" % (version-1))
     self.threadpool.start(self.penworker)
     self.pen = self.viewer.scene.addEllipse(0,0,self.pen_size,self.pen_size,
                                             pen=QPen(QColor('white')),
                                             brush=QBrush(QColor(self.config.get('pen_color', 'red'))))
+    self.pen.lastShown = None
+    self.pen.showDelay = self.config.get("pen_show_delay", 0.4)
     self.pen.hide()
     self.pen.setZValue(100)
     self.penworker.signals.onPenMove.connect(self.movePen)
@@ -252,27 +346,74 @@ class rMViewApp(QApplication):
       self.penworker.signals.onPenLift.connect(self.showPen)
     if self.config.get("hide_pen_on_press", True):
         self.penworker.signals.onPenPress.connect(self.hidePen)
-    self.penworker.signals.onPenNear.connect(self.showPen)
+    self.penworker.signals.onPenNear.connect(self.showPenNow)
     self.penworker.signals.onPenFar.connect(self.hidePen)
 
 
+  def promptDependenciesInstall(self):
+    mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing some needed components.')
+    icon = QPixmap(":/assets/problem.svg")
+    icon.setDevicePixelRatio(self.devicePixelRatio())
+    mbox.setIconPixmap(icon)
+    mbox.setInformativeText(
+      "To work properly, rmView needs some dependencies "\
+      "to be installed on your tablet.\n"\
+      "You can install them manually, or let rmView do the work for you by pressing 'Auto Install' below.\n\n"\
+      "If you are unsure, please consult the documentation.")
+    mbox.addButton(QMessageBox.Cancel)
+    mbox.addButton(QMessageBox.Help)
+    mbox.addButton("Settings...", QMessageBox.ResetRole)
+    mbox.addButton("Auto Install", QMessageBox.AcceptRole)
+    mbox.setDefaultButton(0)
+    answer = mbox.exec()
+    log.info(answer)
+    if answer == 1:
+      log.info("Installing...")
+      try:
+        self.fbworker.installDependencies()
+        log.info("Installation successful!")
+        return True
+      except Exception as e:
+        log.error('%s %s', type(e), e)
+        QMessageBox.critical(None, "Error", 'There has been an error while trying to install the required components on the tablet.\n%s\n.' % e)
+        self.quit()
+    elif answer == QMessageBox.Cancel:
+      self.quit()
+    elif answer == QMessageBox.Help:
+      QDesktopServices.openUrl(QUrl("https://github.com/bordaigorl/rmview"))
+      self.quit()
+    else:
+      self.openSettings(prompt=False)
+
+    return False
+
   @pyqtSlot(QImage)
   def onNewFrame(self, image):
-    if self.orient:
+    if self.orient > 0:
       self.detectOrientation(image)
-      self.orient = False
+      if self.orient == 1:
+        self.orient = 0
     self.viewer.setImage(image)
 
   @pyqtSlot()
   def hidePen(self):
     if self.trail is not None:
       self.trail = False
+    self.pen.lastShown = None
     self.pen.hide()
 
   @pyqtSlot()
   def showPen(self):
     if self.trail is not None:
       self.trail = False
+    self.pen.lastShown = time.perf_counter()
+    # self.pen.show()
+
+  @pyqtSlot()
+  def showPenNow(self):
+    if self.trail is not None:
+      self.trail = False
+    self.pen.lastShown = None
     self.pen.show()
 
   @pyqtSlot(int, int)
@@ -291,13 +432,38 @@ class rMViewApp(QApplication):
         QTimer.singleShot(self.trailDelay // 2, lambda: t.setOpacity(.5))
         QTimer.singleShot(self.trailDelay, lambda: self.viewer.scene.removeItem(t))
     self.pen.setRect(x - (self.pen_size // 2), y - (self.pen_size // 2), self.pen_size, self.pen_size)
+    if self.pen.lastShown is not None:
+      if time.perf_counter() - self.pen.lastShown > self.pen.showDelay:
+        self.pen.show()
+        self.pen.lastShown = None
 
   @pyqtSlot()
   def cloneViewer(self):
     img = self.viewer.image()
+    img = QPixmap.fromImage(img)
+    img.detach()
     v = QtImageViewer()
+    v.setAttribute(Qt.WA_DeleteOnClose)
     v.setImage(img)
     v.show()
+    v.rotate(self.viewer._rotation)
+    self.cloned_frames.add(v)
+    v.destroyed.connect(lambda: self.cloned_frames.discard(v))
+
+  @pyqtSlot()
+  def toggleStreaming(self):
+    if self.streaming:
+      self.fbworker.pause()
+      self.penworker.pause()
+      self.streaming = False
+      self.pauseAction.setText("Resume Streaming")
+      self.viewer.setWindowTitle("rMview - " + self.ssh.hostname + " [PAUSED]")
+    else:
+      self.fbworker.resume()
+      self.penworker.resume()
+      self.streaming = True
+      self.pauseAction.setText("Pause Streaming")
+      self.viewer.setWindowTitle("rMview - " + self.ssh.hostname)
 
   @pyqtSlot()
   def openSettings(self, prompt=True):
@@ -400,11 +566,27 @@ class rMViewApp(QApplication):
     QMessageBox.critical(self.viewer, "Error", 'Please check your reMarkable is properly configured, see the documentation for instructions.\n\n%s' % e)
     self.quit()
 
+  def event(self, e):
+    return QApplication.event(self, e)
+
 def rmViewMain():
   log.setLevel(logging.INFO)
+  if len(sys.argv) > 1:
+    if sys.argv[1] == "-v":
+      log.setLevel(logging.DEBUG)
+      del sys.argv[1]
+    elif sys.argv[1] == "-q":
+      log.setLevel(logging.ERROR)
+      del sys.argv[1]
+
+  log.info("STARTING: %s", time.asctime())
   QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-  ecode = rMViewApp(sys.argv).exec_()
-  print('\nBye!')
+  app = rMViewApp(sys.argv)
+  # We register custom signal handler so we can gracefuly stop app with CTRL+C when QT main loop is
+  # running
+  signal.signal(signal.SIGINT, lambda *args: app.quit())
+  ecode = app.exec_()
+  log.info("QUITTING: %s", time.asctime())
   sys.exit(ecode)
 
 if __name__ == '__main__':

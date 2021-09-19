@@ -8,19 +8,15 @@
 * Demo [:rocket: here][demo]
 * Fast streaming of the screen of your reMarkable to a window in your computer
 * Support for reMarkable 1 and 2
+* Works with software version pre 2.7
+* Compatible with ScreenShare (post 2.9)
 * UI for zooming, panning, rotating
 * Pen tracking: a pointer follows the position of the pen when hovering on the reMarkable
 * Clone a frame into separate window for reference
 * Save screenshots as PNG
 
-## Known issues and caveats:
-
-### :warning: For reMarkable 2 users :warning:
-rMview should work out of the box with the stock firmware version 2.5 or below.
-
-For 2.6 and above, for the moment you need to copy an extra library to the tablet. The process has not been automated yet. Please see [the wiki](https://github.com/bordaigorl/rmview/wiki/Installing-missing-libcrypto-on-RM2-v2.6-or-above) for instructions.
-
-If you use [`rm2fb`](https://github.com/ddvk/remarkable2-framebuffer) there are known compatibilities issues that are [being addressed](https://github.com/pl-semiotics/rM-vnc-server/issues/5).
+> :warning: **Update 2.9+ users** :warning::
+> To use rmview with the ScreenShare feature you have to **first** start the ScreenShare from the tablet, and then start rmview.
 
 
 ## Installation
@@ -45,6 +41,9 @@ The easiest installation method is by using `pip`, from the root folder of this 
 
 (please note the command ends with a dot)
 which will install all required dependencies and install a new `rmview` command.
+If you want to use the SSH tunnel feature, install with
+
+    pip install ".[tunnel]"
 
 Then, from anywhere, you can execute `rmview` from the command line.
 The tool will ask for the connection parameters and then ask permission to install the VNC server on the tablet.
@@ -58,6 +57,7 @@ Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twiste
 
     # install dependencies
     pip install pyqt5 paramiko twisted
+    pip install sshtunnel  # optional
     # build resources file
     pyrcc5 -o src/rmview/resources.py resources.qrc
 
@@ -71,6 +71,12 @@ On the reMarkable itself you need to install [rM-vnc-server][vnc] by copying the
 
 Then you can run the program with `python -m rmview`.
 
+### Using Docker
+
+This project contains a `Dockerfile` so that `rmview` and all its dependencies can be installed and run inside a Docker container.
+Since `rmview` not only reads your local configuration but also needs an X11 display, you should run `docker-run.sh` which takes care of the host mappings.
+Please note that `docker-run.sh` is written for Unix-like OSes and expects your rmview configuration inside your local `$HOME/.config/rmview/` folder.
+
 ## Usage and configuration
 
 **Suggested first use:**
@@ -81,9 +87,10 @@ the default configuration file which you can edit according to the documentation
 
 More generally, you can invoke the program with
 
-    rmview [config]
+    rmview [-v|-q] [config]
 
-the optional `config` parameter is the filename of a json configuration file.
+The optional `-v` flag makes the console output verbose, `-q` makes it quiet (only errors).
+The optional `config` parameter is the filename of a json configuration file.
 If the parameter is not found, the program will look for a `rmview.json` file in the current directory, or, if not found, for the path stored in the environment variable `RMVIEW_CONF`.
 If none are found, or if the configuration is underspecified, the tool is going to prompt for address/password.
 
@@ -96,6 +103,7 @@ All the settings are optional.
 | Setting key              | Values                                                  | Default       |
 | ------------------------ | ------------------------------------------------------- | ------------- |
 | `ssh`                    | Connection parameters (see below)                       | `{}`          |
+| `backend`                | `"auto"`, `"screenshare"`, `"vncserver"`                | `"auto"`      |
 | `orientation`            | `"landscape"`, `"portrait"`, `"auto"`                   | `"landscape"` |
 | `pen_size`               | diameter of pointer in px                               | `15`          |
 | `pen_color`              | color of pointer and trail                              | `"red"`       |
@@ -103,6 +111,17 @@ All the settings are optional.
 | `background_color`       | color of window                                         | `"white"`     |
 | `hide_pen_on_press`      | if true, the pointer is hidden while writing            | `true`        |
 | `show_pen_on_lift`       | if true, the pointer is shown when lifting the pen      | `true`        |
+| `forward_mouse_events`   | Send mouse events to tablet (see below)                 | `false`       |
+
+**PLEASE NOTE:**
+When `backend` is `auto`, if the tablet is using version 2.9 and above then `screenshare` is used;
+otherwise `vncserver` is selected.
+Note that currently `screenshare` is only compatible with version 2.9 and above,
+and `vncserver` with version 2.6 and below.
+
+If `forward_mouse_events` is enabled, clicks and mouse drags on the main window
+will be sent to the tablet as touch events,
+mouse drags while pressing <kbd>CTRL</kbd> will be sent as pen events, allowing drawing.
 
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
@@ -116,6 +135,8 @@ Connection parameters are provided as a dictionary with the following keys (all 
 | `key`             | Local path to key for ssh                               | not needed if password provided       |
 | `timeout`         | Connection timeout in seconds                           | default: 1                            |
 | `host_key_policy` | `"ask"`, `"ignore_new"`, `"ignore_all"`, `"auto_add"`   | default: `"ask"` (description below)  |
+| `tunnel`          | True to connect to VNC server over a local SSH tunnel   | default: `false` (description below)  |
+| `tunnel_compression`   | True to enable compression for SSH tunnel          | default: `false` (description below)  |
 
 The `address` parameter can be either:
 - a single string, in which case the address is used for connection
@@ -124,6 +145,7 @@ The `address` parameter can be either:
 To establish a connection with the tablet, you can use any of the following:
 - Leave `auth_method`, `password` and `key` unspecified: this will ask for a password
 - Specify `"auth_method": "key"` to use a SSH key. In case an SSH key hasn't already been associated with the tablet, you can provide its path with the `key` setting.
+  If key is password protected, you can specify key passphrase using `password` parameter.
 - Provide a `password` in settings
 
 If `auth_method` is `password` but no password is specified, then the tool will ask for the password on connection.
@@ -144,19 +166,45 @@ The old `"insecure_auto_add_host": true` parameter is deprecated and equivalent 
 In case your `~/.ssh/known_hosts` file contains the relevant key associations, rMview should pick them up.
 If you use the "Add/Update" feature when prompted by rMview (for example after a tablet update) then `~/.ssh/known_hosts` will be ignored from then on.
 
-
 :warning: **Key format error:**
 If you get an error when connect using a key, but the key seems ok when connecting manually with ssh, you probably need to convert the key to the PEM format (or re-generate it using the `-m PEM` option of `ssh-keygen`). See [here](https://github.com/paramiko/paramiko/issues/340#issuecomment-492448662) for details.
 
+NOTE: If you have a lot of known hosts in system known hosts file (`~/.ssh/known_hosts`), you are advised to add
+known host entry for remarkable to `~/.config/rmview_known_hosts` because paramiko can be very slow when loading
+large known hosts file which slows down the whole connection routine.
+
+If your user system known hosts file already contains entry for remarkable, you can add it to rmview specific
+hosts file using this command:
+
+```bash
+cat ~/.ssh/known_hosts | grep 10.11.99.1 >> ~/.config/rmview_known_hosts
+```
+
+You should of course replace IP with your remarkable IP.
+
+### Note on security and using an SSH tunnel
+
+By default, this program will start VNC server on remarkable which listens on all the interfaces and doesn't expose
+any authentication mechanism or uses encryption.
+
+This program will then connect to the VNC server over the IP specified in the config.
+
+Not using any authentication and exposing VNC server on all the network interfaces may be OK when connecting to the
+remarkable over USB interface, but when you are connecting to remarkable over WLAN, you are strongly encouraged to
+use built-in SSH tunnel functionality.
+
+When SSH tunnel functionality is used, VNC server which is started on remarkable will only listen on localhost, this
+program will create SSH tunnel to the remarkable and connect to the VNC server over the local SSH tunnel.
+
+This means that the connection will be encrypted and existing SSH authentication will be used.
 
 ## To Do
 
  - [ ] Settings dialog
  - [ ] About dialog
- - [ ] Pause stream of screen/pen
+ - [x] Pause stream of screen/pen
  - [ ] Binary bundles for Window, Linux and MacOs (PyInstaller?)
  - [ ] Add interaction for Lamy button? (1 331 1 down, 1 331 0 up)
- - [ ] Remove dependency to Twisted in `vnc` branch
 
 
 ## Legacy reStreamer-like version
