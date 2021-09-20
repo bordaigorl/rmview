@@ -132,7 +132,7 @@ class ScreenShareStream(QRunnable):
   def run(self):
       log.info("Connecting to ScreenShare, make sure you enable it")
       try:
-        if self.ssh.softwareVersion <= SW_VER_TIMESTAMPS['2.9']:
+        if self.ssh.softwareVersion > SW_VER_TIMESTAMPS['2.9']:
           self.challengeReader = ChallengeReaderProtocol(self)
           reactor.listenUDP(5901, self.challengeReader)
         else:
