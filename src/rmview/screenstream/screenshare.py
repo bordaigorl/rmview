@@ -116,22 +116,27 @@ class ScreenShareStream(QRunnable):
     log.info(f"Challenge: {challenge.hex()}, connecting to vnc")
 
     if not self.factory:
-      self.factory = VncFactory(self.signals)
-      self.factory.setChallenge(challenge)
-
-      # left for testing with stunnel
-      #self.vncClient = internet.TCPClient("localhost", 31337, self.factory)
-      self.vncClient = internet.SSLClient(self.ssh.hostname, 5900, self.factory, ssl.ClientContextFactory())
-      self.vncClient.startService()
+      self.startVncClient(challenge)
     else:
       self.factory.setChallenge(challenge)
 
+  def startVncClient(self, challenge=None):
+    self.factory = VncFactory(self.signals)
+    self.factory.setChallenge(challenge)
+
+    # left for testing with stunnel
+    #self.vncClient = internet.TCPClient("localhost", 31337, self.factory)
+    self.vncClient = internet.SSLClient(self.ssh.hostname, 5900, self.factory, ssl.ClientContextFactory())
+    self.vncClient.startService()
 
   def run(self):
       log.info("Connecting to ScreenShare, make sure you enable it")
       try:
-        self.challengeReader = ChallengeReaderProtocol(self)
-        reactor.listenUDP(5901, self.challengeReader)
+        if self.ssh.softwareVersion <= SW_VER_TIMESTAMPS['2.9']:
+          self.challengeReader = ChallengeReaderProtocol(self)
+          reactor.listenUDP(5901, self.challengeReader)
+        else:
+          self.startVncClient()
         reactor.run(installSignalHandlers=0)
 
       except Exception as e:
