@@ -58,8 +58,8 @@ class ChallengeReaderProtocol(DatagramProtocol):
     addresses = []
 
 
-    #read tables's listening addresses
-    while reader.read(1):
+    #read tablet's listening addresses
+    while reader.read(1) == b'\00':
       ip = socket.inet_ntoa(reader.read(4))
       port, = unpack("!H", reader.read(2))
       addresses.append(f"{ip}:{port}")
