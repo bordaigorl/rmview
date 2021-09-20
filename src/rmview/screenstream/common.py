@@ -28,7 +28,6 @@ class ScreenStreamSignals(QObject):
 class VncClient(RFBClient):
   img = QImage(WIDTH, HEIGHT, IMG_FORMAT)
   painter = QPainter(img)
-  challenge = bytes(32)
 
   def __init__(self, signals):
     super(VncClient, self).__init__()
@@ -67,6 +66,7 @@ class VncClient(RFBClient):
 class VncFactory(RFBFactory):
   protocol = VncClient
   instance = None
+  challenge = None #bytes(32)
 
   def __init__(self, signals):
     super(VncFactory, self).__init__()
