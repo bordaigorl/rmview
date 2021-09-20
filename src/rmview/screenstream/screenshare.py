@@ -68,7 +68,7 @@ class ChallengeReaderProtocol(DatagramProtocol):
 
     self.clients[timestamp] = addresses
 
-class ScreenShareStream(QRunnable, QObject):
+class ScreenShareStream(QRunnable):
 
   factory = None
 
