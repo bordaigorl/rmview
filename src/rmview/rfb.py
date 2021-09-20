@@ -236,7 +236,7 @@ class RFBClient(Protocol):
             log.msg("unknown security types: %s" % repr(types))
 
     def _handleRMAuth(self, block):
-        challenge = self.getRMChallenge()
+        challenge = self.getRMChallenge() or bytes(32)
         self.transport.write(pack("!I", len(challenge))) #challenge length
         self.transport.write(challenge) #challenge
         self.expect(self._handleRMResult, 1)
@@ -245,7 +245,10 @@ class RFBClient(Protocol):
         (result, ) = unpack("!B", block)
 
         if result != 0:
-            raise Exception("authentication failed")
+            if self.getRMChallenge() is None:
+                log.msg("auth failed, currently ignored")
+            else:
+                raise Exception("authentication failed")
 
         self._doClientInitialization()
 
