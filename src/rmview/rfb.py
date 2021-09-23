@@ -37,6 +37,7 @@ ZLIB_ENCODING =                 6
 TIGHT_ENCODING =                7
 ZLIBHEX_ENCODING =              8
 ZRLE_ENCODING =                 16
+REMARKABLE_ENCODING =           5000
 #0xffffff00 to 0xffffffff tight options
 PSEUDO_CURSOR_ENCODING =        -239
 PSEUDO_DESKTOP_SIZE_ENCODING =  -223
@@ -348,6 +349,13 @@ class RFBClient(Protocol):
             self.expect(self._handleConnection, 1)
         elif msgid == 3:
             self.expect(self._handleServerCutText, 7)
+        elif msgid == 103:
+            ## remarkable keep alive
+            self.expect(self._handleConnection, 1)
+        elif msgid == 101:
+            ## remarkable quit message
+            log.msg("Screensharing stopped")
+            return
         else:
             log.msg("unknown message received (id %d)" % msgid)
             self.expect(self._handleConnection, 1)
