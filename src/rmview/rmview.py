@@ -240,7 +240,7 @@ class rMViewApp(QApplication):
       import copy
       config_sanitized = copy.deepcopy(self.config)
       if "password" in self.config.get("ssh", {}):
-          config_sanitized["ssh"]["password"] = config_sanitized["ssh"]["password"][:3] + "*****"
+          config_sanitized["ssh"]["password"] = '*' * len(config_sanitized["ssh"]["password"])
       log.debug("Config values: %s" % (str(config_sanitized)))
 
     return True
