@@ -37,9 +37,15 @@ ZLIB_ENCODING =                 6
 TIGHT_ENCODING =                7
 ZLIBHEX_ENCODING =              8
 ZRLE_ENCODING =                 16
+REMARKABLE_ENCODING =           5000
 #0xffffff00 to 0xffffffff tight options
 PSEUDO_CURSOR_ENCODING =        -239
 PSEUDO_DESKTOP_SIZE_ENCODING =  -223
+
+#auth types
+NO_AUTH = 1
+VNC_AUTH = 2
+RM_AUTH = 100
 
 #keycodes
 #for KeyEvent()
@@ -213,38 +219,39 @@ class RFBClient(Protocol):
 
     def _handleSecurityTypes(self, block):
         types = unpack("!%dB" % len(block), block)
-        SUPPORTED_TYPES = (1, 2, 100)
+        SUPPORTED_TYPES = (NO_AUTH, VNC_AUTH, RM_AUTH)
         valid_types = [sec_type for sec_type in types if sec_type in SUPPORTED_TYPES]
         if valid_types:
             sec_type = max(valid_types)
             self.transport.write(pack("!B", sec_type))
-            if sec_type == 1:
+            if sec_type == NO_AUTH:
                 if self._version < 3.8:
                     self._doClientInitialization()
                 else:
                     self.expect(self._handleVNCAuthResult, 4)
-            elif sec_type == 100:
-                self.expect(self._handleRMAuth,4)
+            elif sec_type == RM_AUTH:
+                self.expect(self._handleRMAuth, 4) 
             else:
                 self.expect(self._handleVNCAuth, 16)
         else:
             log.msg("unknown security types: %s" % repr(types))
 
     def _handleRMAuth(self, block):
-        #4 zero bytes ignored
-
-        #TODO: the security is not checked atm, so an empty challenged is sent
-        #the algo for the challenge is a sha256(timestamp+sha256(usedId))
-        #the timestamp comes from the udp broadcast on port 5901
-        self.transport.write(pack("!I", 32)) #challenge length
-        self.transport.write(b'\x00'*32) #challenge
+        challenge = self.getRMChallenge() or bytes(32)
+        self.transport.write(pack("!I", len(challenge))) #challenge length
+        self.transport.write(challenge) #challenge
         self.expect(self._handleRMResult, 1)
 
     def _handleRMResult(self, block):
-        if block[0] != 0:
-            log.msg("auth failed, currently ignored")
-        self._doClientInitialization()
+        (result, ) = unpack("!B", block)
 
+        if result != 0:
+            if self.getRMChallenge() is None:
+                log.msg("auth failed, currently ignored")
+            else:
+                raise Exception("authentication failed")
+
+        self._doClientInitialization()
 
     def _handleAuth(self, block):
         (auth,) = unpack("!I", block)
@@ -326,6 +333,7 @@ class RFBClient(Protocol):
     def _handleServerName(self, block):
         self.name = block
         #callback:
+        log.msg('Server:', block.decode())
         self.vncConnectionMade()
         self.expect(self._handleConnection, 1)
 
@@ -341,6 +349,13 @@ class RFBClient(Protocol):
             self.expect(self._handleConnection, 1)
         elif msgid == 3:
             self.expect(self._handleServerCutText, 7)
+        elif msgid == 103:
+            ## remarkable keep alive
+            self.expect(self._handleConnection, 1)
+        elif msgid == 101:
+            ## remarkable quit message
+            log.msg("Screensharing stopped")
+            return
         else:
             log.msg("unknown message received (id %d)" % msgid)
             self.expect(self._handleConnection, 1)
@@ -830,6 +845,10 @@ class RFBClient(Protocol):
         """The server has new ASCII text in its cut buffer.
            (aka clipboard)"""
 
+    def getRMChallenge(self):
+        raise Exception("should be implemented in the subclass")
+        
+
 class RFBFactory(protocol.ClientFactory):
     """A factory for remote frame buffer connections."""
 
@@ -840,3 +859,4 @@ class RFBFactory(protocol.ClientFactory):
     def __init__(self, password = None, shared = 1):
         self.password = password
         self.shared = shared
+        

@@ -316,6 +316,7 @@ class rMViewApp(QApplication):
       self.leftAction.setEnabled(False)
       self.rightAction.setEnabled(False)
       self.homeAction.setEnabled(False)
+
     elif backend == 'vncserver':
       self.fbworker = VncStreamer(ssh, ssh_config=self.config.get('ssh', {}),
                                        delay=self.config.get('fetch_frame_delay'))
@@ -348,7 +349,6 @@ class rMViewApp(QApplication):
         self.penworker.signals.onPenPress.connect(self.hidePen)
     self.penworker.signals.onPenNear.connect(self.showPenNow)
     self.penworker.signals.onPenFar.connect(self.hidePen)
-
 
   def promptDependenciesInstall(self):
     mbox = QMessageBox(QMessageBox.NoIcon, 'Missing components', 'Your reMarkable is missing some needed components.')
