@@ -47,7 +47,8 @@ class VncClient(RFBClient):
       RRE_ENCODING,
       ZRLE_ENCODING,
       RAW_ENCODING,
-      REMARKABLE_ENCODING ])
+      # REMARKABLE_ENCODING
+      ])
     self.framebufferUpdateRequest()
 
   def sendPassword(self, password):
