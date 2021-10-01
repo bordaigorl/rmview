@@ -28,10 +28,9 @@ log = logging.getLogger('rmview')
 # the screenshare vnc auth uses udp broadcasts
 class ChallengeReaderProtocol(DatagramProtocol):
   clients = {}
-  started = False
 
-  def __init__(self, screenShareStream):
-    self.screenShareStream = screenShareStream
+  def __init__(self, callback):
+    self.callback = callback
 
   def datagramReceived(self, datagram, host):
     reader = io.BytesIO(datagram)
@@ -44,29 +43,27 @@ class ChallengeReaderProtocol(DatagramProtocol):
       return
     log.info(f"received timestamp challenge {tounx}")
 
-    #TODO: just quick and dirty way to run the vnc after the challenge is received
-    if not self.started:
-      self.started = True
-      self.screenShareStream.runVnc(timestamp)
+    if not self.callback(timestamp):
+      log.debug("Stopping listening for timestamps")
+      self.transport.stopListening()
 
-    (hashlength,) = unpack("!I", reader.read(4))
-    hash = reader.read(hashlength)
-    strhash = hash.hex()
+    self.clients[timestamp] = addresses = []
 
-    #TODO: the email hash could be used to filter the broadcasts when multiple devices are on the network
-    log.info(f"email hash: {strhash}")
-    addresses = []
+    ### The rest of the message is ignored for now
+    # (hashlength,) = unpack("!I", reader.read(4))
+    # hash = reader.read(hashlength)
+    # strhash = hash.hex()
+    # #TODO: the email hash could be used to filter the broadcasts when multiple devices are on the network
+    # log.info(f"email hash: {strhash}")
 
+    # #read tablet's listening addresses
+    # while reader.read(1) == b'\00':
+    #   ip = socket.inet_ntoa(reader.read(4))
+    #   port, = unpack("!H", reader.read(2))
+    #   addresses.append(f"{ip}:{port}")
 
-    #read tablet's listening addresses
-    while reader.read(1) == b'\00':
-      ip = socket.inet_ntoa(reader.read(4))
-      port, = unpack("!H", reader.read(2))
-      addresses.append(f"{ip}:{port}")
+    # log.info(addresses)
 
-    log.info(addresses)
-
-    self.clients[timestamp] = addresses
 
 
 class ScreenShareStream(QRunnable):
@@ -111,7 +108,6 @@ class ScreenShareStream(QRunnable):
 
     return(d["auth0-userid"])
 
-
   def computeChallenge(self, userId, timestamp):
     userBytes = userId.encode()
     userIdHash = hashlib.sha256(userBytes).digest()
@@ -119,14 +115,12 @@ class ScreenShareStream(QRunnable):
 
   #Hack to run the vnc with the challenge
   def runVnc(self, timestamp):
-    userId = self.get_userid()
-    challenge = self.computeChallenge(userId, timestamp)
-    log.info(f"Challenge: {challenge.hex()}, connecting to vnc")
-
     if not self.factory:
+      userId = self.get_userid()
+      challenge = self.computeChallenge(userId, timestamp)
+      log.info(f"Challenge: {challenge.hex()}, connecting to vnc")
       self.startVncClient(challenge)
-    else:
-      self.factory.setChallenge(challenge)
+    return False
 
   def startVncClient(self, challenge=None):
     self.factory = VncFactory(self.signals)
@@ -142,8 +136,8 @@ class ScreenShareStream(QRunnable):
       try:
         if self.ssh.softwareVersion > SW_VER_TIMESTAMPS['2.9.1.236']:
           log.warning("Authenticating, please wait...")
-          self.challengeReader = ChallengeReaderProtocol(self)
-          reactor.listenUDP(5901, self.challengeReader)
+          challengeReader = ChallengeReaderProtocol(self.runVnc)
+          reactor.listenUDP(5901, challengeReader)
         else:
           log.warning("Skipping authentication")
           self.startVncClient()
