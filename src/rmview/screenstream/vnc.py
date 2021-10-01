@@ -54,7 +54,7 @@ class VncStreamer(QRunnable):
 
     self._stop = True
 
-    log.debug("Stopping framebuffer thread...")
+    log.debug("Stopping VNC streamer thread...")
 
     if self.vncClient:
       try:
@@ -82,7 +82,7 @@ class VncStreamer(QRunnable):
       except Exception as e:
         log.error(e)
 
-    log.debug("Framebuffer thread stopped")
+    log.debug("VNC streamer thread stopped")
 
   @pyqtSlot()
   def run(self):
