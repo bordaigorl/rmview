@@ -68,6 +68,7 @@ class ChallengeReaderProtocol(DatagramProtocol):
 
     self.clients[timestamp] = addresses
 
+
 class ScreenShareStream(QRunnable):
 
   factory = None
@@ -84,8 +85,15 @@ class ScreenShareStream(QRunnable):
     pass
 
   def stop(self):
-    log.info("Stopping framebuffer thread...")
-    reactor.callFromThread(reactor.stop)
+    log.debug("Stopping ScreenShare streamer thread...")
+    try:
+      log.info("Disconnecting from VNC server...")
+      reactor.callFromThread(self.vncClient.stopService)
+    except Exception as e:
+      log.debug("Disconnect failed (%s), stopping reactor" % str(e))
+      reactor.callFromThread(reactor.stop)
+
+    log.debug("ScreenShare streamer thread stopped.")
 
   """
   reads the usedId from deviceToken from the config file on the rm
