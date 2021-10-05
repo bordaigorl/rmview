@@ -84,12 +84,10 @@ class PenTracker(QRunnable):
         if e_code == e_code_stylus_pressure:
           if e_value > self.threshold:
             if state == LIFTED:
-              log.debug('PRESS')
               state = PRESSED
               self.signals.onPenPress.emit()
           else:
             if state == PRESSED:
-              log.debug('RELEASE')
               state = LIFTED
               self.signals.onPenLift.emit()
 

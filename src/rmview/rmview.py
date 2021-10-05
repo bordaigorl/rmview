@@ -574,6 +574,8 @@ def rmViewMain():
   if len(sys.argv) > 1:
     if sys.argv[1] == "-v":
       log.setLevel(logging.DEBUG)
+      import twisted.python
+      twisted.python.log.startLogging(sys.stdout)
       del sys.argv[1]
     elif sys.argv[1] == "-q":
       log.setLevel(logging.ERROR)
