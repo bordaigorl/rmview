@@ -61,14 +61,6 @@ Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twiste
     # build resources file
     pyrcc5 -o src/rmview/resources.py resources.qrc
 
-On the reMarkable itself you need to install [rM-vnc-server][vnc] by copying the relevant binary from the `bin` folder:
-
-    # For reMarkable 1
-    scp bin/rM1-vnc-server-standalone root@REMARKABLE_ADDRESS:rM-vnc-server-standalone
-
-    # For reMarkable 2
-    scp bin/rM2-vnc-server-standalone root@REMARKABLE_ADDRESS:rM-vnc-server-standalone
-
 Then you can run the program with `python -m rmview`.
 
 ### Using Docker
