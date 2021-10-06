@@ -101,6 +101,7 @@ All the settings are optional.
 | `pen_color`              | color of pointer and trail                              | `"red"`       |
 | `pen_trail`              | persistence of trail in ms                              | `200`         |
 | `background_color`       | color of window                                         | `"white"`     |
+| `invert_colors`          | if true, start the tablet with inverted colors          | `false`       |
 | `hide_pen_on_press`      | if true, the pointer is hidden while writing            | `true`        |
 | `show_pen_on_lift`       | if true, the pointer is shown when lifting the pen      | `true`        |
 | `forward_mouse_events`   | Send mouse events to tablet (see below)                 | `false`       |

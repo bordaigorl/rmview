@@ -92,6 +92,9 @@ class rMViewApp(QApplication):
     if 'background_color' in self.config:
       self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
 
+    if self.config.get('invert_colors'):
+        self.viewer.invert_colors()
+
     ### ACTIONS
     self.cloneAction = QAction('Clone current frame', self.viewer)
     self.cloneAction.setShortcut(QKeySequence.New)
@@ -102,6 +105,11 @@ class rMViewApp(QApplication):
     self.pauseAction.setShortcut('Ctrl+P')
     self.pauseAction.triggered.connect(self.toggleStreaming)
     self.viewer.addAction(self.pauseAction)
+    ###
+    self.invertColorsAction = QAction('Invert colors', checkable=True, checked=self.viewer.is_inverted())
+    self.invertColorsAction.setShortcut("Ctrl+I")
+    self.invertColorsAction.triggered.connect(self.invertColors)
+    self.viewer.addAction(self.invertColorsAction)
     ###
     self.settingsAction = QAction('Settings...', self.viewer)
     self.settingsAction.triggered.connect(self.openSettings)
@@ -136,6 +144,8 @@ class rMViewApp(QApplication):
     # inputMenu.addAction(self.rightAction)
     # inputMenu.addAction(self.homeAction)
     self.viewer.menu.addSeparator() # --------------------------
+    self.viewer.menu.addAction(self.invertColorsAction)
+    self.viewer.menu.addSeparator() # --------------------------
     self.viewer.menu.addAction(self.settingsAction)
     self.viewer.menu.addSeparator() # --------------------------
     self.viewer.menu.addAction(self.quitAction)
@@ -144,7 +154,7 @@ class rMViewApp(QApplication):
     self.viewer.show()
 
     # Display connecting image until we successfuly connect
-    self.viewer.setImage(QPixmap(':/assets/connecting.png'))
+    self.viewer.setImage(QImage(':/assets/connecting.png'))
 
     self.orient = 0
     orient = self.config.get('orientation', 'landscape')
@@ -440,7 +450,6 @@ class rMViewApp(QApplication):
   @pyqtSlot()
   def cloneViewer(self):
     img = self.viewer.image()
-    img = QPixmap.fromImage(img)
     img.detach()
     v = QtImageViewer()
     v.setAttribute(Qt.WA_DeleteOnClose)
@@ -464,6 +473,11 @@ class rMViewApp(QApplication):
       self.streaming = True
       self.pauseAction.setText("Pause Streaming")
       self.viewer.setWindowTitle("rMview - " + self.ssh.hostname)
+
+  @pyqtSlot()
+  def invertColors(self):
+    self.viewer.invert_colors()
+    self.fbworker.factory.instance.emitImage()
 
   @pyqtSlot()
   def openSettings(self, prompt=True):

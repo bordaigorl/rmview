@@ -80,6 +80,8 @@ class QtImageViewer(QGraphicsView):
     self._fit = True
     self._rotation = 0 # used to produce a rotated screenshot
 
+    self._invert_colors = False
+
   def contextMenuEvent(self, event):
     self.fitAction.setChecked(self._fit)
     self.menu.exec_(self.mapToGlobal(event.pos()))
@@ -103,12 +105,12 @@ class QtImageViewer(QGraphicsView):
     return None
 
   def setImage(self, image):
-    if type(image) is QPixmap:
-      pixmap = image
-    elif type(image) is QImage:
+    if type(image) is QImage:
+      if self._invert_colors:
+        image.invertPixels()
       pixmap = QPixmap.fromImage(image)
     else:
-      raise RuntimeError("ImageViewer.setImage: Argument must be a QImage or QPixmap.")
+      raise RuntimeError("ImageViewer.setImage: Argument must be a QImage.")
     if self.hasImage():
       self._pixmap.setPixmap(pixmap)
     else:
@@ -199,6 +201,12 @@ class QtImageViewer(QGraphicsView):
       if ok and fileName:
         img = img.transformed(QTransform().rotate(self._rotation))
         img.save(fileName)
+
+  def invert_colors(self):
+    self._invert_colors = not self._invert_colors
+
+  def is_inverted(self):
+    return self._invert_colors
 
   def is_landscape(self):
     return self._rotation == 90
