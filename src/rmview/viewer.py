@@ -11,6 +11,11 @@ class QtImageViewer(QGraphicsView):
   zoomInFactor = 1.25
   zoomOutFactor = 1 / zoomInFactor
 
+  _fit = True
+  _rotation = 0 # used to produce a rotated screenshot
+  _invert_colors = False
+
+
   def __init__(self):
     QGraphicsView.__init__(self)
     self.setFrameStyle(QFrame.NoFrame)
@@ -60,6 +65,11 @@ class QtImageViewer(QGraphicsView):
     self.rotCCWAction.triggered.connect(self.rotateCCW)
     self.addAction(self.rotCCWAction)
     ###
+    self.invertColorsAction = QAction('Invert colors', checkable=True, checked=self.isInverted())
+    self.invertColorsAction.setShortcut("Ctrl+I")
+    self.invertColorsAction.triggered.connect(self.invertColors)
+    self.addAction(self.invertColorsAction)
+    ###
     self.screenshotAction = QAction('Save screenshot', self)
     self.screenshotAction.setShortcut(QKeySequence.Save)
     self.screenshotAction.triggered.connect(self.screenshot)
@@ -75,13 +85,13 @@ class QtImageViewer(QGraphicsView):
     self.menu.addAction(self.rotCWAction)
     self.menu.addAction(self.rotCCWAction)
     self.menu.addSeparator() # --------------------------
+    self.menu.addAction(self.invertColorsAction)
+    self.menu.addSeparator() # --------------------------
     self.menu.addAction(self.screenshotAction)
-
-    self._fit = True
-    self._rotation = 0 # used to produce a rotated screenshot
 
   def contextMenuEvent(self, event):
     self.fitAction.setChecked(self._fit)
+    self.invertColorsAction.setChecked(self._invert_colors)
     self.menu.exec_(self.mapToGlobal(event.pos()))
 
   def hasImage(self):
@@ -103,12 +113,12 @@ class QtImageViewer(QGraphicsView):
     return None
 
   def setImage(self, image):
-    if type(image) is QPixmap:
-      pixmap = image
-    elif type(image) is QImage:
+    if type(image) is QImage:
+      if self._invert_colors:
+        image.invertPixels()
       pixmap = QPixmap.fromImage(image)
     else:
-      raise RuntimeError("ImageViewer.setImage: Argument must be a QImage or QPixmap.")
+      raise RuntimeError("ImageViewer.setImage: Argument must be a QImage.")
     if self.hasImage():
       self._pixmap.setPixmap(pixmap)
     else:
@@ -200,7 +210,22 @@ class QtImageViewer(QGraphicsView):
         img = img.transformed(QTransform().rotate(self._rotation))
         img.save(fileName)
 
-  def is_landscape(self):
+  def invertColors(self):
+    self._invert_colors = not self._invert_colors
+    if self._pixmap:
+      img = self._pixmap.pixmap().toImage()
+      if not self._invert_colors:
+        img.invertPixels()
+      self.setImage(img)
+    if self._invert_colors:
+      self.setBackgroundBrush(Qt.black)
+    else:
+      self.setBackgroundBrush(Qt.white)
+
+  def isInverted(self):
+    return self._invert_colors
+
+  def isLandscape(self):
     return self._rotation == 90
 
   def landscape(self):
@@ -209,7 +234,7 @@ class QtImageViewer(QGraphicsView):
     self._rotation = 90
     self.updateViewer()
 
-  def is_portrait(self):
+  def isPortrait(self):
     return self._rotation == 0
 
   def portrait(self):

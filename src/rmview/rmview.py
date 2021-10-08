@@ -92,6 +92,9 @@ class rMViewApp(QApplication):
     if 'background_color' in self.config:
       self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
 
+    if self.config.get('invert_colors'):
+        self.viewer.invertColors()
+
     ### ACTIONS
     self.cloneAction = QAction('Clone current frame', self.viewer)
     self.cloneAction.setShortcut(QKeySequence.New)
@@ -144,7 +147,7 @@ class rMViewApp(QApplication):
     self.viewer.show()
 
     # Display connecting image until we successfuly connect
-    self.viewer.setImage(QPixmap(':/assets/connecting.png'))
+    self.viewer.setImage(QImage(':/assets/connecting.png'))
 
     self.orient = 0
     orient = self.config.get('orientation', 'landscape')
@@ -188,10 +191,10 @@ class rMViewApp(QApplication):
       portrait = False
 
     if portrait:
-      if not self.viewer.is_portrait():
+      if not self.viewer.isPortrait():
         self.viewer.portrait()
         self.autoResize(HEIGHT / WIDTH)
-    elif not self.viewer.is_landscape():
+    elif not self.viewer.isLandscape():
         self.viewer.landscape()
         self.autoResize(WIDTH / HEIGHT)
 
@@ -440,7 +443,6 @@ class rMViewApp(QApplication):
   @pyqtSlot()
   def cloneViewer(self):
     img = self.viewer.image()
-    img = QPixmap.fromImage(img)
     img.detach()
     v = QtImageViewer()
     v.setAttribute(Qt.WA_DeleteOnClose)
