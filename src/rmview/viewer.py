@@ -11,6 +11,11 @@ class QtImageViewer(QGraphicsView):
   zoomInFactor = 1.25
   zoomOutFactor = 1 / zoomInFactor
 
+  _fit = True
+  _rotation = 0 # used to produce a rotated screenshot
+  _invert_colors = False
+
+
   def __init__(self):
     QGraphicsView.__init__(self)
     self.setFrameStyle(QFrame.NoFrame)
@@ -60,6 +65,11 @@ class QtImageViewer(QGraphicsView):
     self.rotCCWAction.triggered.connect(self.rotateCCW)
     self.addAction(self.rotCCWAction)
     ###
+    self.invertColorsAction = QAction('Invert colors', checkable=True, checked=self.isInverted())
+    self.invertColorsAction.setShortcut("Ctrl+I")
+    self.invertColorsAction.triggered.connect(self.invertColors)
+    self.addAction(self.invertColorsAction)
+    ###
     self.screenshotAction = QAction('Save screenshot', self)
     self.screenshotAction.setShortcut(QKeySequence.Save)
     self.screenshotAction.triggered.connect(self.screenshot)
@@ -75,15 +85,13 @@ class QtImageViewer(QGraphicsView):
     self.menu.addAction(self.rotCWAction)
     self.menu.addAction(self.rotCCWAction)
     self.menu.addSeparator() # --------------------------
+    self.menu.addAction(self.invertColorsAction)
+    self.menu.addSeparator() # --------------------------
     self.menu.addAction(self.screenshotAction)
-
-    self._fit = True
-    self._rotation = 0 # used to produce a rotated screenshot
-
-    self._invert_colors = False
 
   def contextMenuEvent(self, event):
     self.fitAction.setChecked(self._fit)
+    self.invertColorsAction.setChecked(self._invert_colors)
     self.menu.exec_(self.mapToGlobal(event.pos()))
 
   def hasImage(self):

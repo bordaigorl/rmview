@@ -106,11 +106,6 @@ class rMViewApp(QApplication):
     self.pauseAction.triggered.connect(self.toggleStreaming)
     self.viewer.addAction(self.pauseAction)
     ###
-    self.invertColorsAction = QAction('Invert colors', checkable=True, checked=self.viewer.isInverted())
-    self.invertColorsAction.setShortcut("Ctrl+I")
-    self.invertColorsAction.triggered.connect(self.viewer.invertColors)
-    self.viewer.addAction(self.invertColorsAction)
-    ###
     self.settingsAction = QAction('Settings...', self.viewer)
     self.settingsAction.triggered.connect(self.openSettings)
     self.viewer.addAction(self.settingsAction)
@@ -143,8 +138,6 @@ class rMViewApp(QApplication):
     # inputMenu.addAction(self.leftAction)
     # inputMenu.addAction(self.rightAction)
     # inputMenu.addAction(self.homeAction)
-    self.viewer.menu.addSeparator() # --------------------------
-    self.viewer.menu.addAction(self.invertColorsAction)
     self.viewer.menu.addSeparator() # --------------------------
     self.viewer.menu.addAction(self.settingsAction)
     self.viewer.menu.addSeparator() # --------------------------
