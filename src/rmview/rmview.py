@@ -93,7 +93,7 @@ class rMViewApp(QApplication):
       self.viewer.setBackgroundBrush(QBrush(QColor(self.config.get('background_color'))))
 
     if self.config.get('invert_colors'):
-        self.viewer.invert_colors()
+        self.viewer.invertColors()
 
     ### ACTIONS
     self.cloneAction = QAction('Clone current frame', self.viewer)
@@ -106,7 +106,7 @@ class rMViewApp(QApplication):
     self.pauseAction.triggered.connect(self.toggleStreaming)
     self.viewer.addAction(self.pauseAction)
     ###
-    self.invertColorsAction = QAction('Invert colors', checkable=True, checked=self.viewer.is_inverted())
+    self.invertColorsAction = QAction('Invert colors', checkable=True, checked=self.viewer.isInverted())
     self.invertColorsAction.setShortcut("Ctrl+I")
     self.invertColorsAction.triggered.connect(self.invertColors)
     self.viewer.addAction(self.invertColorsAction)
@@ -198,10 +198,10 @@ class rMViewApp(QApplication):
       portrait = False
 
     if portrait:
-      if not self.viewer.is_portrait():
+      if not self.viewer.isPortrait():
         self.viewer.portrait()
         self.autoResize(HEIGHT / WIDTH)
-    elif not self.viewer.is_landscape():
+    elif not self.viewer.isLandscape():
         self.viewer.landscape()
         self.autoResize(WIDTH / HEIGHT)
 
@@ -476,7 +476,7 @@ class rMViewApp(QApplication):
 
   @pyqtSlot()
   def invertColors(self):
-    self.viewer.invert_colors()
+    self.viewer.invertColors()
     self.fbworker.factory.instance.emitImage()
 
   @pyqtSlot()

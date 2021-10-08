@@ -202,13 +202,13 @@ class QtImageViewer(QGraphicsView):
         img = img.transformed(QTransform().rotate(self._rotation))
         img.save(fileName)
 
-  def invert_colors(self):
+  def invertColors(self):
     self._invert_colors = not self._invert_colors
 
-  def is_inverted(self):
+  def isInverted(self):
     return self._invert_colors
 
-  def is_landscape(self):
+  def isLandscape(self):
     return self._rotation == 90
 
   def landscape(self):
@@ -217,7 +217,7 @@ class QtImageViewer(QGraphicsView):
     self._rotation = 90
     self.updateViewer()
 
-  def is_portrait(self):
+  def isPortrait(self):
     return self._rotation == 0
 
   def portrait(self):
