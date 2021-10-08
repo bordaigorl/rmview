@@ -204,6 +204,15 @@ class QtImageViewer(QGraphicsView):
 
   def invertColors(self):
     self._invert_colors = not self._invert_colors
+    if self._pixmap:
+      img = self._pixmap.pixmap().toImage()
+      if not self._invert_colors:
+        img.invertPixels()
+      self.setImage(img)
+    if self._invert_colors:
+      self.setBackgroundBrush(Qt.black)
+    else:
+      self.setBackgroundBrush(Qt.white)
 
   def isInverted(self):
     return self._invert_colors

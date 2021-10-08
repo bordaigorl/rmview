@@ -108,7 +108,7 @@ class rMViewApp(QApplication):
     ###
     self.invertColorsAction = QAction('Invert colors', checkable=True, checked=self.viewer.isInverted())
     self.invertColorsAction.setShortcut("Ctrl+I")
-    self.invertColorsAction.triggered.connect(self.invertColors)
+    self.invertColorsAction.triggered.connect(self.viewer.invertColors)
     self.viewer.addAction(self.invertColorsAction)
     ###
     self.settingsAction = QAction('Settings...', self.viewer)
@@ -473,11 +473,6 @@ class rMViewApp(QApplication):
       self.streaming = True
       self.pauseAction.setText("Pause Streaming")
       self.viewer.setWindowTitle("rMview - " + self.ssh.hostname)
-
-  @pyqtSlot()
-  def invertColors(self):
-    self.viewer.invertColors()
-    self.fbworker.factory.instance.emitImage()
 
   @pyqtSlot()
   def openSettings(self, prompt=True):
