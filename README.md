@@ -10,10 +10,18 @@
 * Support for reMarkable 1 and 2
 * Works with software version pre 2.7
 * Compatible with ScreenShare (post 2.9)
-* UI for zooming, panning, rotating
+* UI for zooming, panning, rotating, inverting colors
 * Pen tracking: a pointer follows the position of the pen when hovering on the reMarkable
 * Clone a frame into separate window for reference
 * Save screenshots as PNG
+
+## Compatibility
+
+|                | ScreenShare        | VNC Server         | rm2fb              |
+| -------------- | :----------------: | :----------------: | :----------------: |
+| RM1/2  < v2.9  | :x:                | :white_check_mark: | :white_check_mark: |
+| RM1/2 >= v2.9  | :white_check_mark: | :x:                | :x:                |
+
 
 > :warning: **Update 2.9+ users** :warning::
 > To use rmview with the ScreenShare feature you have to **first** start the ScreenShare from the tablet, and then start rmview.
@@ -53,10 +61,10 @@ If you plan to modify the source code, use `pip install -e .` so that when execu
 
 ### Manual installation
 
-Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted]) with `pip` or `conda` manually:
+Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted], [PyJWT][pyjwt]) with `pip` or `conda` manually:
 
     # install dependencies
-    pip install pyqt5 paramiko twisted
+    pip install pyqt5 paramiko twisted pyjwt
     pip install sshtunnel  # optional
     # build resources file
     pyrcc5 -o src/rmview/resources.py resources.qrc
@@ -217,6 +225,8 @@ The VNC server running on the tablet is developed by @pl-semiotics:
 
 - [rM-vnc-server][vnc]
 
+Support for the ScreenSharing feature is based on @ddvk's reverse-engineering of the authentication protocol.
+
 I took inspiration from the following projects:
 
 - [QtImageViewer](https://github.com/marcel-goldschen-ohm/PyQtImageViewer/)
@@ -226,7 +236,7 @@ I took inspiration from the following projects:
 
 Icons adapted from designs by Freepik, xnimrodx from www.flaticon.com
 
-Thanks to @adem amd @ChrisPattison for their [PRs](https://github.com/bordaigorl/rmview/issues?q=is%3Apr+is%3Aclosed).
+Thanks to @adem, @ChrisPattison, and @jlbas for their [PRs](https://github.com/bordaigorl/rmview/issues?q=is%3Apr+is%3Aclosed).
 
 ## Disclaimer
 
@@ -247,3 +257,4 @@ GPLv3
 [pyqt5]: https://www.riverbankcomputing.com/software/pyqt/
 [paramiko]: http://www.paramiko.org/
 [twisted]: https://twistedmatrix.com/trac/
+[pyjwt]: https://pypi.org/project/PyJWT/

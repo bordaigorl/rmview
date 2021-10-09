@@ -32,7 +32,7 @@ class genResourcesEggInfo(egg_info):
 
 setup(
   name='rmview',
-  version='2.2',
+  version='3.0',
   url='https://github.com/bordaigorl/rmview',
   description='rMview: a fast live viewer for reMarkable',
   author='bordaigorl',
