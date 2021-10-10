@@ -64,13 +64,14 @@ class rMConnect(QRunnable):
   _known_hosts = None
 
   def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=3,
-               onConnect=None, onError=None, host_key_policy=None, known_hosts=None, **kwargs):
+               onConnect=None, onError=None, host_key_policy=None, known_hosts=None, auth_method=None, **kwargs):
     super(rMConnect, self).__init__()
 
     self.address = address
     self.username = username
     self.password = password
     self.timeout = timeout
+    self.auth_method = auth_method
     self.host_key_policy = host_key_policy
     self._known_hosts = known_hosts
 
@@ -138,6 +139,11 @@ class rMConnect(QRunnable):
         'pkey': self.pkey,
         'timeout': self.timeout,
       }
+
+      if self.auth_method == 'password':
+        self.options['look_for_keys'] = False
+        self.options['allow_agent'] = False
+
     except Exception as e:
       self._exception = e
 
