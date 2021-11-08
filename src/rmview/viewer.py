@@ -2,6 +2,10 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+def _invertColor(c):
+  (r, g, b, a) = c.getRgb()
+  return QColor(255-r, 255-g, 255-b, a)
+
 
 class QtImageViewer(QGraphicsView):
 
@@ -217,10 +221,7 @@ class QtImageViewer(QGraphicsView):
       if not self._invert_colors:
         img.invertPixels()
       self.setImage(img)
-    if self._invert_colors:
-      self.setBackgroundBrush(Qt.black)
-    else:
-      self.setBackgroundBrush(Qt.white)
+    self.setBackgroundBrush(_invertColor(self.backgroundBrush().color()))
 
   def isInverted(self):
     return self._invert_colors
