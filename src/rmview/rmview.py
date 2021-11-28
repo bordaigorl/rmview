@@ -1,3 +1,4 @@
+import pathlib
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -49,7 +50,7 @@ class rMViewApp(QApplication):
   def __init__(self, args):
     super(rMViewApp, self).__init__(args)
     path = QStandardPaths.standardLocations(QStandardPaths.ConfigLocation)[0]
-    path = path.rstrip('/\\')
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     self.CONFIG_DIR = path
     self.DEFAULT_CONFIG = os.path.join(self.CONFIG_DIR, 'rmview.json')
     self.LOCAL_KNOWN_HOSTS = os.path.join(self.CONFIG_DIR, 'rmview_known_hosts')
