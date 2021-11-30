@@ -41,7 +41,7 @@ class VncStreamer(QRunnable):
   def installDependencies(self):
     sftp = self.ssh.open_sftp()
     from stat import S_IXUSR
-    fo = QFile(':bin/rM%d-vnc-server-standalone' % ssh.deviceVersion)
+    fo = QFile(':bin/rM%d-vnc-server-standalone' % self.ssh.deviceVersion)
     fo.open(QIODevice.ReadOnly)
     sftp.putfo(fo, 'rM-vnc-server-standalone')
     fo.close()
