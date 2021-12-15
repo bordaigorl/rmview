@@ -10,10 +10,7 @@ from twisted.internet.error import ConnectionRefusedError
 from ..rmparams import *
 from ..rfb import *
 
-try:
-  IMG_FORMAT = QImage.Format_Grayscale16
-except Exception:
-  IMG_FORMAT = QImage.Format_RGB16
+IMG_FORMAT = QImage.Format_RGB16
 BYTES_PER_PIXEL = 2
 
 log = logging.getLogger('rmview')
