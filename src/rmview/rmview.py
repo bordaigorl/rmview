@@ -159,6 +159,8 @@ class rMViewApp(QApplication):
     else: # auto
       self.autoResize(HEIGHT / WIDTH)
       self.orient = 1 if orient == "auto_on_load" else 2
+    self.viewer.rotCWAction.triggered.connect(self.disableAutoOrientation)
+    self.viewer.rotCCWAction.triggered.connect(self.disableAutoOrientation)
 
     # # Setup global menu
     # menu = self.bar.addMenu('&View')
@@ -180,6 +182,9 @@ class rMViewApp(QApplication):
     self.threadpool = QThreadPool()
     self.aboutToQuit.connect(self.joinWorkers)
     self.requestConnect()
+
+  def disableAutoOrientation(self):
+    self.orient = 0
 
   def detectOrientation(self, image):
     (tl,bl,tr) = find_circle_buttons(image)
