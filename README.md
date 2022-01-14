@@ -10,6 +10,7 @@
 * Support for reMarkable 1 and 2
 * Works with software version pre 2.7
 * Compatible with ScreenShare (post 2.9)
+* Supports colors (tablet is grayscale but original colors are preserved in rmview)
 * UI for zooming, panning, rotating, inverting colors
 * Pen tracking: a pointer follows the position of the pen when hovering on the reMarkable
 * Clone a frame into separate window for reference
@@ -69,7 +70,7 @@ Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twiste
     # build resources file
     pyrcc5 -o src/rmview/resources.py resources.qrc
 
-Then you can run the program with `python -m rmview`.
+Then you can run the program with `python -m rmview` from the `src` folder.
 
 ### Using Docker
 
