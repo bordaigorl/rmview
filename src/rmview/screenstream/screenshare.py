@@ -100,7 +100,7 @@ class ScreenShareStream(QRunnable):
       with sftp.file('/etc/remarkable.conf') as f:
         file_content = f.read().decode()
 
-    cfg = configparser.ConfigParser()
+    cfg = configparser.ConfigParser(strict=False)
     cfg.read_string(file_content)
     offset = len('@ByteArray(')
     token = cfg.get('General', 'devicetoken')[offset:-1]
