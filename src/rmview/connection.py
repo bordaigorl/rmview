@@ -138,6 +138,10 @@ class rMConnect(QRunnable):
         'password': self.password,
         'pkey': self.pkey,
         'timeout': self.timeout,
+        # remarkable's Dropbear version (Dropbear v2019.78) does not support the server-sig-algs extension,
+        # and also does not support sha2, so connection fails if sha2 is used
+        # paramiko starting with version 2.9.0, paramiko defaults to sha2 if not explicitly disabled: https://github.com/paramiko/paramiko/issues/1961
+        'disabled_algorithms': {'pubkeys': ['rsa-sha2-512', 'rsa-sha2-256']},
       }
 
       if self.auth_method == 'password':
