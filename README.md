@@ -8,7 +8,7 @@
 * Demo [:rocket: here][demo]
 * Fast streaming of the screen of your reMarkable to a window in your computer
 * Support for reMarkable 1 and 2
-* Works with software version pre 2.7
+* Works with software version pre 2.8
 * Compatible with ScreenShare (post 2.9)
 * Supports colors (tablet is grayscale but original colors are preserved in rmview)
 * UI for zooming, panning, rotating, inverting colors
@@ -119,12 +119,12 @@ All the settings are optional.
 When `backend` is `auto`, if the tablet is using version 2.9 and above then `screenshare` is used;
 otherwise `vncserver` is selected.
 Note that currently `screenshare` is only compatible with version 2.9 and above,
-and `vncserver` with version 2.7 and below.
+and `vncserver` with version 2.8 and below.
 
 If `forward_mouse_events` is enabled, clicks and mouse drags on the main window
 will be sent to the tablet as touch events,
 mouse drags while pressing <kbd>CTRL</kbd> will be sent as pen events, allowing drawing.
-This option is only available if using `"backend": "vncserver"`, which in turn is only supported for rM software version below 2.7.
+This option is only available if using `"backend": "vncserver"`, which in turn is only supported for rM software version below 2.8.
 
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
