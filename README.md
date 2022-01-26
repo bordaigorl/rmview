@@ -119,11 +119,12 @@ All the settings are optional.
 When `backend` is `auto`, if the tablet is using version 2.9 and above then `screenshare` is used;
 otherwise `vncserver` is selected.
 Note that currently `screenshare` is only compatible with version 2.9 and above,
-and `vncserver` with version 2.6 and below.
+and `vncserver` with version 2.7 and below.
 
 If `forward_mouse_events` is enabled, clicks and mouse drags on the main window
 will be sent to the tablet as touch events,
 mouse drags while pressing <kbd>CTRL</kbd> will be sent as pen events, allowing drawing.
+This option is only available if using `"backend": "vncserver"`, which in turn is only supported for rM software version below 2.7.
 
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
