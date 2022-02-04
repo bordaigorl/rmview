@@ -96,7 +96,7 @@ class QtImageViewer(QGraphicsView):
   def contextMenuEvent(self, event):
     self.fitAction.setChecked(self._fit)
     self.invertColorsAction.setChecked(self._invert_colors)
-    self.menu.exec_(self.mapToGlobal(event.pos()))
+    self.menu.exec(self.mapToGlobal(event.pos()))
 
   def hasImage(self):
     return self._pixmap is not None
