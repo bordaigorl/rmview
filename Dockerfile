@@ -17,7 +17,7 @@ COPY src ./src
 RUN pip install --upgrade pip
 # TODO: setup.py could to be fixed to include install_requires
 #       see also: https://stackoverflow.com/q/21915469/543875
-RUN pip install pyqt5==5.14.2 paramiko twisted
+RUN pip install pyqt6==6.2.3 paramiko twisted
 RUN pip install .[tunnel]
 RUN pip cache purge
 CMD rmview

@@ -1,6 +1,6 @@
-# from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
+# from PyQt6.QtGui import *
+from PyQt6.QtCore import *
+from PyQt6.QtWidgets import *
 
 
 import paramiko
@@ -86,7 +86,7 @@ class rMConnect(QRunnable):
           self.pkey = paramiko.RSAKey.from_private_key_file(key)
         except paramiko.ssh_exception.PasswordRequiredException:
           passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:",
-                                                QLineEdit.Password)
+                                                QLineEdit.EchoMode.Password)
           if ok:
             self.pkey = paramiko.RSAKey.from_private_key_file(key, password=passphrase)
           else:

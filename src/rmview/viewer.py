@@ -1,6 +1,6 @@
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtWidgets import *
 
 def _invertColor(c):
   (r, g, b, a) = c.getRgb()
@@ -22,21 +22,21 @@ class QtImageViewer(QGraphicsView):
 
   def __init__(self):
     QGraphicsView.__init__(self)
-    self.setFrameStyle(QFrame.NoFrame)
+    self.setFrameStyle(QFrame.Shape.NoFrame)
 
-    self.setRenderHint(QPainter.Antialiasing)
-    self.setRenderHint(QPainter.SmoothPixmapTransform)
+    self.setRenderHint(QPainter.RenderHint.Antialiasing)
+    self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
-    self.viewport().grabGesture(Qt.PinchGesture)
+    self.viewport().grabGesture(Qt.GestureType.PinchGesture)
 
     self.scene = QGraphicsScene()
     self.setScene(self.scene)
 
     self._pixmap = None
-    self.aspectRatioMode = Qt.KeepAspectRatio
-    self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-    self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-    self.setAlignment(Qt.AlignCenter)
+    self.aspectRatioMode = Qt.AspectRatioMode.KeepAspectRatio
+    self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     ### ACTIONS
     self.fitAction = QAction('Fit to view', self, checkable=True)
@@ -50,12 +50,12 @@ class QtImageViewer(QGraphicsView):
     self.addAction(self.actualSizeAction)
     ###
     self.zoomInAction = QAction('Zoom In', self)
-    self.zoomInAction.setShortcut(QKeySequence.ZoomIn)
+    self.zoomInAction.setShortcut(QKeySequence.StandardKey.ZoomIn)
     self.zoomInAction.triggered.connect(self.zoomIn)
     self.addAction(self.zoomInAction)
     ###
     self.zoomOutAction = QAction('Zoom Out', self)
-    self.zoomOutAction.setShortcut(QKeySequence.ZoomOut)
+    self.zoomOutAction.setShortcut(QKeySequence.StandardKey.ZoomOut)
     self.zoomOutAction.triggered.connect(self.zoomOut)
     self.addAction(self.zoomOutAction)
     ###
@@ -75,7 +75,7 @@ class QtImageViewer(QGraphicsView):
     self.addAction(self.invertColorsAction)
     ###
     self.screenshotAction = QAction('Save screenshot', self)
-    self.screenshotAction.setShortcut(QKeySequence.Save)
+    self.screenshotAction.setShortcut(QKeySequence.StandardKey.Save)
     self.screenshotAction.triggered.connect(self.screenshot)
     self.addAction(self.screenshotAction)
     ###
@@ -128,7 +128,7 @@ class QtImageViewer(QGraphicsView):
     else:
       self._pixmap = self.scene.addPixmap(pixmap)
       self._pixmap.setZValue(-1)
-    self._pixmap.setTransformationMode(Qt.SmoothTransformation)
+    self._pixmap.setTransformationMode(Qt.TransformationMode.SmoothTransformation)
     self.setSceneRect(QRectF(pixmap.rect()))  # Set scene size to image size.
     # self.fitInView(self.sceneRect(), self.aspectRatioMode)  # Show entire image (use current aspect ratio mode).
     self.updateViewer()
@@ -144,9 +144,9 @@ class QtImageViewer(QGraphicsView):
     self.updateViewer()
 
   def mousePressEvent(self, event):
-    if event.button() == Qt.LeftButton:
+    if event.button() == Qt.MouseButton.LeftButton:
       scenePos = self.mapToScene(event.pos())
-      if int(event.modifiers()) & int(Qt.ControlModifier):
+      if int(event.modifiers()) & int(Qt.KeyboardModifier.ControlModifier):
         self._button = 1
       else:
         self._button = 4
@@ -173,8 +173,8 @@ class QtImageViewer(QGraphicsView):
     QGraphicsView.mouseDoubleClickEvent(self, event)
 
   def viewportEvent(self, event):
-    if event.type() == QEvent.Gesture:
-      pinch = event.gesture(Qt.PinchGesture)
+    if event.type() == QEvent.Type.Gesture:
+      pinch = event.gesture(Qt.GestureType.PinchGesture)
       if pinch is not None:
         self._fit = False
         self.scale(pinch.scaleFactor(), pinch.scaleFactor())
@@ -182,13 +182,13 @@ class QtImageViewer(QGraphicsView):
     return bool(QGraphicsView.viewportEvent(self, event))
 
   def wheelEvent(self, event):
-    if event.modifiers() == Qt.NoModifier:
+    if event.modifiers() == Qt.KeyboardModifier.NoModifier:
       QGraphicsView.wheelEvent(self, event)
     else:
       self._fit = False
 
-      self.setTransformationAnchor(QGraphicsView.NoAnchor)
-      self.setResizeAnchor(QGraphicsView.NoAnchor)
+      self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
+      self.setResizeAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
 
       oldPos = self.mapToScene(event.pos())
 
@@ -246,16 +246,16 @@ class QtImageViewer(QGraphicsView):
   def rotateCW(self):
     self.rotate(90)
     self._rotation += 90
-    if not self.windowState() & (QWindow.FullScreen | QWindow.Maximized):
-      s = QApplication.desktop().availableGeometry(self).size()
+    if not self.windowState() in [QWindow.Visibility.FullScreen, QWindow.Visibility.Maximized]:
+      s = QGuiApplication.primaryScreen().availableGeometry().size()
       self.resize(self.size().transposed().boundedTo(s))
     self.updateViewer()
 
   def rotateCCW(self):
     self.rotate(-90)
     self._rotation -= 90
-    if not self.windowState() & (QWindow.FullScreen | QWindow.Maximized):
-      s = QApplication.desktop().availableGeometry(self).size()
+    if not self.windowState() in [QWindow.Visibility.FullScreen, QWindow.Visibility.Maximized]:
+      s = QGuiApplication.primaryScreen().availableGeometry().size()
       self.resize(self.size().transposed().boundedTo(s))
     self.updateViewer()
 
@@ -278,14 +278,14 @@ class QtImageViewer(QGraphicsView):
     self.rotate(self._rotation)
 
   def keyPressEvent(self, event):
-    if event.key() == Qt.Key_F:
+    if event.key() == Qt.Key.Key_F:
       self.setFit(True)
-    elif event.key() == Qt.Key_1:
+    elif event.key() == Qt.Key.Key_1:
       self.actualSize()
-    elif event.key() == Qt.Key_S:
+    elif event.key() == Qt.Key.Key_S:
       self.screenshot()
-    elif event.key() == Qt.Key_Plus:
+    elif event.key() == Qt.Key.Key_Plus:
       self.zoomIn()
-    elif event.key() == Qt.Key_Minus:
+    elif event.key() == Qt.Key.Key_Minus:
       self.zoomOut()
 

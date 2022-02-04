@@ -1,9 +1,8 @@
 import pathlib
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtCore import *
 
-from . import resources
 from .screenstream.common import KEY_Left, KEY_Right, KEY_Escape
 from .screenstream.vnc import VncStreamer
 from .screenstream.screenshare import ScreenShareStream
@@ -49,7 +48,7 @@ class rMViewApp(QApplication):
 
   def __init__(self, args):
     super(rMViewApp, self).__init__(args)
-    path = QStandardPaths.standardLocations(QStandardPaths.ConfigLocation)[0]
+    path = QStandardPaths.standardLocations(QStandardPaths.StandardLocation.ConfigLocation)[0]
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     self.CONFIG_DIR = path
     self.DEFAULT_CONFIG = os.path.join(self.CONFIG_DIR, 'rmview.json')
@@ -80,14 +79,14 @@ class rMViewApp(QApplication):
     self.config.setdefault('ssh', {})
     self.pen_size = self.config.get('pen_size', self.pen_size)
     self.trailPen = QPen(QColor(self.config.get('pen_color', 'red')), max(1, self.pen_size // 3))
-    self.trailPen.setCapStyle(Qt.RoundCap)
-    self.trailPen.setJoinStyle(Qt.RoundJoin)
+    self.trailPen.setCapStyle(Qt.PenCapStyle.RoundCap)
+    self.trailPen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
     self.trailDelay = self.config.get('pen_trail', 200)
     self.trail = None if self.trailDelay == 0 else False
     self.right_mode = self.config.get('right_mode', True)
 
     self.bar = QMenuBar()
-    self.setWindowIcon(QIcon(':/assets/rmview.svg'))
+    self.setWindowIcon(QIcon('assets:rmview.svg'))
 
     self.viewer = QtImageViewer()
 
@@ -99,7 +98,7 @@ class rMViewApp(QApplication):
 
     ### ACTIONS
     self.cloneAction = QAction('Clone current frame', self.viewer)
-    self.cloneAction.setShortcut(QKeySequence.New)
+    self.cloneAction.setShortcut(QKeySequence.StandardKey.New)
     self.cloneAction.triggered.connect(self.cloneViewer)
     self.viewer.addAction(self.cloneAction)
     ###
@@ -128,7 +127,7 @@ class rMViewApp(QApplication):
     self.viewer.addAction(self.rightAction)
     ###
     self.homeAction = QAction('Emulate Central Button', self)
-    self.homeAction.setShortcut(QKeySequence.Cancel)
+    self.homeAction.setShortcut(QKeySequence.StandardKey.Cancel)
     self.homeAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Escape))
     self.viewer.addAction(self.homeAction)
 
@@ -206,9 +205,10 @@ class rMViewApp(QApplication):
         self.autoResize(WIDTH / HEIGHT)
 
   def autoResize(self, ratio):
-    if self.viewer.windowState() & (QWindow.FullScreen | QWindow.Maximized):
+
+    if self.viewer.windowState() in [QWindow.Visibility.FullScreen, QWindow.Visibility.Maximized]:
       return
-    dg = self.desktop().availableGeometry(self.viewer)
+    dg = QGuiApplication.primaryScreen().availableGeometry()
     ds = dg.size() * 0.7
     if ds.width() * ratio > ds.height():
       ds.setWidth(int(ds.height() / ratio))
@@ -231,7 +231,7 @@ class rMViewApp(QApplication):
     auth_method = self.config['ssh'].get('auth_method')
     if (auth_method == 'password' and 'password' not in self.config['ssh']) or \
        (auth_method is None and 'password' not in self.config['ssh'] and 'key' not in self.config['ssh']):
-      password, ok = QInputDialog.getText(self.viewer, "Configuration","reMarkable password:", QLineEdit.Password)
+      password, ok = QInputDialog.getText(self.viewer, "Configuration","reMarkable password:", QLineEdit.EchoMode.Password)
       if ok:
         self.config['ssh']['password'] = password or ""
       else:
@@ -591,12 +591,11 @@ def rmViewMain():
       del sys.argv[1]
 
   log.info("STARTING: %s", time.asctime())
-  QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
   app = rMViewApp(sys.argv)
   # We register custom signal handler so we can gracefuly stop app with CTRL+C when QT main loop is
   # running
   signal.signal(signal.SIGINT, lambda *args: app.quit())
-  ecode = app.exec_()
+  ecode = app.exec()
   log.info("QUITTING: %s", time.asctime())
   sys.exit(ecode)
 
