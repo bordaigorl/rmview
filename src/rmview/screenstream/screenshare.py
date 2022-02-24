@@ -99,6 +99,7 @@ class ScreenShareStream(QRunnable):
     log.info("Listening for device broadcast through ssh tunnel...")
     stdin, stdout, stderr = self.ssh.exec_command('/usr/bin/nc.traditional -l -u -p 5901 -w 6')
     # nc needs its stdin closed before it will return!
+    stdin.writelines("\n")
     stdin.close()
     stdout.channel.recv_exit_status()
     timestamp = stdout.read(8)
