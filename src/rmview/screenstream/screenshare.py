@@ -104,7 +104,7 @@ class ScreenShareStream(QRunnable):
     cfg.read_string(file_content)
     offset = len('@ByteArray(')
     token = cfg.get('General', 'devicetoken')[offset:-1]
-    d = jwt.decode(token, options={"verify_signature": False})
+    d = jwt.decode(token, options={"verify_signature": False, "verify_aud": False})
 
     return(d["auth0-userid"])
 
