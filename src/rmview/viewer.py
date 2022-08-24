@@ -79,6 +79,10 @@ class QtImageViewer(QGraphicsView):
     self.screenshotAction.triggered.connect(self.screenshot)
     self.addAction(self.screenshotAction)
     ###
+    self.screenshotToClipboardAction = QAction('Copy screenshot', self)
+    self.screenshotToClipboardAction.setShortcut(QKeySequence.Copy)
+    self.screenshotToClipboardAction.triggered.connect(self.screenshotToClipboard)
+    self.addAction(self.screenshotToClipboardAction)
 
     self.menu = QMenu(self)
     self.menu.addAction(self.fitAction)
@@ -92,6 +96,8 @@ class QtImageViewer(QGraphicsView):
     self.menu.addAction(self.invertColorsAction)
     self.menu.addSeparator() # --------------------------
     self.menu.addAction(self.screenshotAction)
+    self.menu.addAction(self.screenshotToClipboardAction)
+    self.menu.addSeparator() # --------------------------
 
   def contextMenuEvent(self, event):
     self.fitAction.setChecked(self._fit)
@@ -213,6 +219,12 @@ class QtImageViewer(QGraphicsView):
       if ok and fileName:
         img = img.transformed(QTransform().rotate(self._rotation))
         img.save(fileName)
+
+  def screenshotToClipboard(self):
+      img = self.image()
+      if img is not None:
+        img = img.transformed(QTransform().rotate(self._rotation))
+        QApplication.clipboard().setImage(img)
 
   def invertColors(self):
     self._invert_colors = not self._invert_colors
