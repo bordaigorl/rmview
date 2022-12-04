@@ -181,6 +181,7 @@ class RFBClient(Protocol):
         buffer = b''.join(self._packet)
         if b'\n' in buffer:
             version = 3.8
+            version_server = 3.8
             if buffer[:3] == b'RFB':
                 version_server = float(buffer[3:-1].replace(b'0', b''))
                 SUPPORTED_VERSIONS = (3.3, 3.7, 3.8)
