@@ -231,7 +231,7 @@ class RFBClient(Protocol):
                 else:
                     self.expect(self._handleVNCAuthResult, 4)
             elif sec_type == RM_AUTH:
-                self.expect(self._handleRMAuth, 4) 
+                self.expect(self._handleRMAuth, 4)
             else:
                 self.expect(self._handleVNCAuth, 16)
         else:
@@ -394,7 +394,7 @@ class RFBClient(Protocol):
             elif encoding == PSEUDO_CURSOR_ENCODING:
                 length = width * height * self.bypp
                 length += int(math.floor((width + 7.0) / 8)) * height
-                self.expect(self._handleDecodePsuedoCursor, length, x, y, width, height)
+                self.expect(self._handleDecodePseudoCursor, length, x, y, width, height)
             elif encoding == PSEUDO_DESKTOP_SIZE_ENCODING:
                 self._handleDecodeDesktopSize(width, height)
             else:
@@ -469,7 +469,7 @@ class RFBClient(Protocol):
         #~ print "_doNextHextileSubrect %r" % ((color, x, y, width, height, tx, ty), )
         #coords of next tile
         #its line after line of tiles
-        #finished when the last line is completly received
+        #finished when the last line is completely received
 
         #dont inc the first time
         if tx is not None:
@@ -688,7 +688,7 @@ class RFBClient(Protocol):
         self._doConnection()
 
     # --- Pseudo Cursor Encoding
-    def _handleDecodePsuedoCursor(self, block, x, y, width, height):
+    def _handleDecodePseudoCursor(self, block, x, y, width, height):
         split = width * height * self.bypp
         image = block[:split]
         mask = block[split:]
@@ -748,7 +748,7 @@ class RFBClient(Protocol):
     def setPixelFormat(self, bpp=32, depth=24, bigendian=0, truecolor=1, redmax=255, greenmax=255, bluemax=255, redshift=0, greenshift=8, blueshift=16):
         pixformat = pack("!BBBBHHHBBBxxx", bpp, depth, bigendian, truecolor, redmax, greenmax, bluemax, redshift, greenshift, blueshift)
         self.transport.write(pack("!Bxxx16s", 0, pixformat))
-        #rember these settings
+        #remember these settings
         self.bpp, self.depth, self.bigendian, self.truecolor = bpp, depth, bigendian, truecolor
         self.redmax, self.greenmax, self.bluemax = redmax, greenmax, bluemax
         self.redshift, self.greenshift, self.blueshift = redshift, greenshift, blueshift
@@ -789,7 +789,7 @@ class RFBClient(Protocol):
     #------------------------------------------------------
     def vncConnectionMade(self):
         """connection is initialized and ready.
-           typicaly, the pixel format is set here."""
+           typically, the pixel format is set here."""
 
     def vncRequestPassword(self):
         """a password is needed to log on, use sendPassword() to
@@ -812,7 +812,7 @@ class RFBClient(Protocol):
     def commitUpdate(self, rectangles=None):
         """called after a series of updateRectangle(), copyRectangle()
            or fillRectangle() are finished.
-           typicaly, here is the place to request the next screen
+           typically, here is the place to request the next screen
            update with FramebufferUpdateRequest(incremental=1).
            argument is a list of tuples (x,y,w,h) with the updated
            rectangles."""
@@ -848,16 +848,15 @@ class RFBClient(Protocol):
 
     def getRMChallenge(self):
         raise Exception("should be implemented in the subclass")
-        
+
 
 class RFBFactory(protocol.ClientFactory):
     """A factory for remote frame buffer connections."""
 
     # the class of the protocol to build
-    # should be overriden by application to use a derrived class
+    # should be overridden by application to use a derived class
     protocol = RFBClient
 
     def __init__(self, password = None, shared = 1):
         self.password = password
         self.shared = shared
-        
