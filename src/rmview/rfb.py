@@ -119,47 +119,84 @@ KEY_BackSlash = 0x005C
 KEY_SpaceBar=   0x0020
 
 
-# ZRLE helpers
-def _zrle_next_bit(it, pixels_in_tile):
-    num_pixels = 0
-    while True:
-        b = ord(next(it))
+class ZRLEDataStream():
 
-        for n in range(8):
-            value = b >> (7 - n)
-            yield value & 1
+    def __init__(self, data, bytes_per_pixel=1):
+        self._data = data
+        self._offset = 0
+        self._bypp = bytes_per_pixel
 
-            num_pixels += 1
-            if num_pixels == pixels_in_tile:
-                return
+    def __len__(self):
+        return len(self._data) - self._offset
 
+    def nextByte(self):
+        b = ord(self._data[self._offset])
+        self._offset += 1
+        return b
 
-def _zrle_next_dibit(it, pixels_in_tile):
-    num_pixels = 0
-    while True:
-        b = ord(next(it))
+    def nextChunk(self, length):
+        r = memoryview(self._data)[self._offset:self._offset+length]
+        self._offset += length
+        return r
 
-        for n in range(0, 8, 2):
-            value = b >> (6 - n)
-            yield value & 3
+    def nextPixel(self):
+        return self.nextChunk(self._bypp)
 
-            num_pixels += 1
-            if num_pixels == pixels_in_tile:
-                return
+    def nextPixels(self, n=1):
+        return self.nextChunk(n*self._bypp)
 
+    def nextRunLength(self):
+        run_length_next = self.nextByte()
+        run_length = run_length_next
+        while run_length_next == 255:
+            run_length_next = self.nextByte()
+            run_length += run_length_next
+        return run_length + 1
 
-def _zrle_next_nibble(it, pixels_in_tile):
-    num_pixels = 0
-    while True:
-        b = ord(next(it))
+    def nextPaletteIndices(self, palette_size, length=1):
+        if palette_size == 2:
+            return self._zrle_next_bit(length)
+        if palette_size == 3 or palette_size == 4:
+            return self._zrle_next_dibit(length)
+        else:
+            return self._zrle_next_nibble(length)
 
-        for n in range(0, 8, 4):
-            value = b >> (4 - n)
-            yield value & 15
+    def _zrle_next_bit(self, tot_pixels):
+        num_pixels = 0
+        while num_pixels < tot_pixels:
+            b = self.nextByte()
+            for n in range(8):
+                value = b >> (7 - n)
+                yield value & 1
 
-            num_pixels += 1
-            if num_pixels == pixels_in_tile:
-                return
+                num_pixels += 1
+                if num_pixels == tot_pixels:
+                    return
+
+    def _zrle_next_dibit(self, tot_pixels):
+        num_pixels = 0
+        while num_pixels < tot_pixels:
+            b = self.nextByte()
+            for n in range(0, 8, 2):
+                value = b >> (6 - n)
+                yield value & 3
+
+                num_pixels += 1
+                if num_pixels == tot_pixels:
+                    return
+
+    def _zrle_next_nibble(self, tot_pixels):
+        num_pixels = 0
+        while num_pixels < tot_pixels:
+            b = self.nextByte()
+            for n in range(0, 8, 4):
+                value = b >> (4 - n)
+                yield value & 15
+
+                num_pixels += 1
+                if num_pixels == tot_pixels:
+                    return
+
 
 
 class RFBClient(Protocol):
@@ -586,22 +623,10 @@ class RFBClient(Protocol):
         tx = x
         ty = y
 
-        data = self._zlib_stream.decompress(block)
-        it = iter(data)
+        data = ZRLEDataStream(self._zlib_stream.decompress(block), self.bypp)
 
-        def cpixel(i):
-            for j in range(self.bypp):
-                yield next(i)
-            # yield next(i)
-            # yield next(i)
-            # Alpha channel
-            # yield 0xff
-
-        while True:
-            try:
-                subencoding = ord(next(it))
-            except StopIteration:
-                break
+        while len(data) > 0:
+            subencoding = data.nextByte()
 
             # calc tile size
             tw = th = 64
@@ -613,71 +638,59 @@ class RFBClient(Protocol):
             pixels_in_tile = tw * th
 
             # decode next tile
-            num_pixels = 0
-            pixel_data = bytearray()
             palette_size = subencoding & 127
             if subencoding & 0x80:
                 # RLE
-
-                def do_rle(pixel):
-                    run_length_next = ord(next(it))
-                    run_length = run_length_next
-                    while run_length_next == 255:
-                        run_length_next = ord(next(it))
-                        run_length += run_length_next
-                    pixel_data.extend(pixel * (run_length + 1))
-                    return run_length + 1
+                pixel_data = bytearray()
 
                 if palette_size == 0:
                     # plain RLE
-                    while num_pixels < pixels_in_tile:
-                        color = bytearray(cpixel(it))
-                        num_pixels += do_rle(color)
-                    if num_pixels != pixels_in_tile:
-                        raise ValueError("too many pixels")
+                    while len(pixel_data) < pixels_in_tile:
+                        color = bytes(data.nextPixel())
+                        run_len = data.nextRunLength()
+                        pixel_data += color * run_len
+                        if len(pixel_data) > pixels_in_tile:
+                            raise ValueError("too many pixels")
                 else:
-                    palette = [bytearray(cpixel(it)) for p in range(palette_size)]
+                    # Palette RLE
+                    palette = [data.nextPixel() for _ in range(palette_size)]
 
-                    while num_pixels < pixels_in_tile:
-                        palette_index = ord(next(it))
+                    while len(pixel_data) < pixels_in_tile:
+                        palette_index = data.nextByte()
                         if palette_index & 0x80:
                             palette_index &= 0x7F
                             # run of length > 1, more bytes follow to determine run length
-                            num_pixels += do_rle(palette[palette_index])
+                            run_len = data.nextRunLength()
+                            pixel_data += palette[palette_index] * run_len
                         else:
                             # run of length 1
-                            pixel_data.extend(palette[palette_index])
-                            num_pixels += 1
-                    if num_pixels != pixels_in_tile:
+                            pixel_data += palette[palette_index]
+
+                    if len(pixel_data) != pixels_in_tile:
                         raise ValueError("too many pixels")
 
-                self.updateRectangle(tx, ty, tw, th, bytes(pixel_data))
+                self.updateRectangle(tx, ty, tw, th, pixel_data)
             else:
                 # No RLE
                 if palette_size == 0:
                     # Raw pixel data
-                    pixel_data = b''.join(bytes(cpixel(it)) for _ in range(pixels_in_tile))
-                    self.updateRectangle(tx, ty, tw, th, bytes(pixel_data))
+                    pixel_data = data.nextPixels(pixels_in_tile)
+                    self.updateRectangle(tx, ty, tw, th, pixel_data)
                 elif palette_size == 1:
                     # Fill tile with plain color
-                    color = bytearray(cpixel(it))
-                    self.fillRectangle(tx, ty, tw, th, bytes(color))
+                    color = data.nextPixel()
+                    self.fillRectangle(tx, ty, tw, th, color)
                 else:
                     if palette_size > 16:
                         raise ValueError(
                             "Palette of size {0} is not allowed".format(palette_size))
 
-                    palette = [bytearray(cpixel(it)) for _ in range(palette_size)]
-                    if palette_size == 2:
-                        next_index = _zrle_next_bit(it, pixels_in_tile)
-                    elif palette_size == 3 or palette_size == 4:
-                        next_index = _zrle_next_dibit(it, pixels_in_tile)
-                    else:
-                        next_index = _zrle_next_nibble(it, pixels_in_tile)
+                    palette = [data.nextPixel() for _ in range(palette_size)]
 
-                    for palette_index in next_index:
-                        pixel_data.extend(palette[palette_index])
-                    self.updateRectangle(tx, ty, tw, th, bytes(pixel_data))
+                    pixel_data = bytearray()
+                    for palette_index in data.nextPaletteIndices(palette_size, pixels_in_tile):
+                        pixel_data += palette[palette_index]
+                    self.updateRectangle(tx, ty, tw, th, pixel_data)
 
             # Next tile
             tx = tx + 64
