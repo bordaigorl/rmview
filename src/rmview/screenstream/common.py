@@ -81,6 +81,7 @@ class VncFactory(RFBFactory):
     reactor.callFromThread(reactor.stop)
 
   def clientConnectionFailed(self, connector, reason):
+    log.warning("Connection failed")
     if reason.check(ConnectionRefusedError):
       self.signals.onFatalError.emit(Exception("It seems the tablet is refusing to connect.\nIf you are using the ScreenShare backend please make sure you enabled it on the tablet, before running rmview."))
     else:
