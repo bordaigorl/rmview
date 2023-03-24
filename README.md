@@ -62,10 +62,10 @@ If you plan to modify the source code, use `pip install -e .` so that when execu
 
 ### Manual installation
 
-Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted], [PyJWT][pyjwt]) with `pip` or `conda` manually:
+Install the dependencies ([PyQt6][pyqt6], [Paramiko][paramiko], [Twisted][twisted], [PyJWT][pyjwt]) with `pip` or `conda` manually:
 
     # install dependencies
-    pip install pyqt5 paramiko twisted pyjwt
+    pip install pyqt6 paramiko twisted pyjwt
     pip install sshtunnel  # optional
     # build resources file
     pyrcc5 -o src/rmview/resources.py resources.qrc
@@ -256,7 +256,7 @@ GPLv3
 
 [py3]: https://www.python.org/downloads/
 [anaconda]: https://docs.anaconda.com/anaconda
-[pyqt5]: https://www.riverbankcomputing.com/software/pyqt/
+[pyqt6]: https://www.riverbankcomputing.com/software/pyqt/
 [paramiko]: http://www.paramiko.org/
 [twisted]: https://twistedmatrix.com/trac/
 [pyjwt]: https://pypi.org/project/PyJWT/

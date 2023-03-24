@@ -1,8 +1,8 @@
 import logging
 import atexit
 
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 
 from twisted.internet import reactor
 from twisted.internet.error import ConnectionRefusedError
@@ -10,7 +10,7 @@ from twisted.internet.error import ConnectionRefusedError
 from ..rmparams import *
 from ..rfb import *
 
-IMG_FORMAT = QImage.Format_RGB16
+IMG_FORMAT = QImage.Format.Format_RGB16
 BYTES_PER_PIXEL = 2
 
 log = logging.getLogger('rmview')

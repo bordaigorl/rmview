@@ -1,8 +1,8 @@
 import logging
 import atexit
 
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 
 from twisted.internet import reactor
 from twisted.application import internet
@@ -41,7 +41,7 @@ class VncStreamer(QRunnable):
   def installDependencies(self):
     sftp = self.ssh.open_sftp()
     from stat import S_IXUSR
-    fo = QFile(':bin/rM%d-vnc-server-standalone' % self.ssh.deviceVersion)
+    fo = QFile('bin:rM%d-vnc-server-standalone' % self.ssh.deviceVersion)
     fo.open(QIODevice.ReadOnly)
     sftp.putfo(fo, 'rM-vnc-server-standalone')
     fo.close()

@@ -6,12 +6,13 @@ from setuptools import setup, find_packages
 
 import sys
 
+import PyQt6.QtCore as QtCore
+
 def genResources():
-    from PyQt5.pyrcc_main import main as pyrcc_main
+    QtCore.QDir.addSearchPath('assets', 'assets/')
+    QtCore.QDir.addSearchPath('bin', 'bin/')
     saved_argv = sys.argv
     # Use current environment to find pyrcc but use the public interface
-    sys.argv = ['pyrcc5', '-o', 'src/rmview/resources.py', 'resources.qrc']
-    pyrcc_main()
     sys.argv = saved_argv
 
 # https://stackoverflow.com/questions/19569557/pip-not-picking-up-a-custom-install-cmdclass
@@ -41,7 +42,7 @@ setup(
     'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
   ],
   packages=['rmview', 'rmview.screenstream'],
-  install_requires=['pyqt5', 'paramiko', 'twisted[tls]', 'pyjwt'],
+  install_requires=['pyqt6', 'paramiko', 'twisted[tls]', 'pyjwt'],
   extras_require = { 'tunnel': ['sshtunnel'] },
   entry_points={
     'console_scripts':['rmview = rmview.rmview:rmViewMain']
