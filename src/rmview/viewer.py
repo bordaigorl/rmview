@@ -39,6 +39,11 @@ class QtImageViewer(QGraphicsView):
     self.setAlignment(Qt.AlignCenter)
 
     ### ACTIONS
+    self.fullscreenAction = QAction('Full Screen', self, checkable=True)
+    self.fullscreenAction.setShortcut(QKeySequence.FullScreen)
+    self.fullscreenAction.triggered.connect(self.toggleFullScreen)
+    self.addAction(self.fullscreenAction)
+    ###
     self.fitAction = QAction('Fit to view', self, checkable=True)
     self.fitAction.setShortcut("Ctrl+0")
     self.fitAction.triggered.connect(lambda: self.setFit(True))
@@ -85,6 +90,8 @@ class QtImageViewer(QGraphicsView):
     self.addAction(self.screenshotToClipboardAction)
 
     self.menu = QMenu(self)
+    self.menu.addAction(self.fullscreenAction)
+    self.menu.addSeparator() # --------------------------
     self.menu.addAction(self.fitAction)
     self.menu.addAction(self.actualSizeAction)
     self.menu.addAction(self.zoomInAction)
@@ -278,6 +285,17 @@ class QtImageViewer(QGraphicsView):
   def zoomOut(self):
     self._fit = False
     self.scale(self.zoomOutFactor, self.zoomOutFactor)
+
+  def toggleFullScreen(self, checked=False):
+    if checked:
+      self.window().showFullScreen()
+    else:
+      self.window().showNormal()
+
+  def changeEvent(self, event):
+    if event.type() == QEvent.WindowStateChange:
+      self.fullscreenAction.setChecked(self.window().windowState() & Qt.WindowFullScreen)
+    super().changeEvent(event)
 
   def setFit(self, f):
     self._fit = f
