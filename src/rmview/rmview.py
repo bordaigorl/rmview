@@ -453,6 +453,7 @@ class rMViewApp(QApplication):
 
   @pyqtSlot()
   def cloneViewer(self):
+    self.viewer.showNormal()
     img = self.viewer.image()
     img.detach()
     v = QtImageViewer()
@@ -461,6 +462,7 @@ class rMViewApp(QApplication):
     v.show()
     v.rotate(self.viewer._rotation)
     self.cloned_frames.add(v)
+    v.setWindowTitle("Cloned frame %d" % len(self.cloned_frames))
     v.destroyed.connect(lambda: self.cloned_frames.discard(v))
 
   @pyqtSlot()
