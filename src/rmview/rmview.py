@@ -119,17 +119,17 @@ class rMViewApp(QApplication):
     ###
     self.leftAction = QAction('Emulate Left Button', self)
     self.leftAction.setShortcut('Ctrl+Left')
-    self.leftAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Left))
+    self.leftAction.triggered.connect(lambda: self.emulateKeyEvent(KEY_Left))
     self.viewer.addAction(self.leftAction)
     ###
     self.rightAction = QAction('Emulate Right Button', self)
     self.rightAction.setShortcut('Ctrl+Right')
-    self.rightAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Right))
+    self.rightAction.triggered.connect(lambda: self.emulateKeyEvent(KEY_Right))
     self.viewer.addAction(self.rightAction)
     ###
     self.homeAction = QAction('Emulate Central Button', self)
-    self.homeAction.setShortcut(QKeySequence.Cancel)
-    self.homeAction.triggered.connect(lambda: self.fbworker.keyEvent(KEY_Escape))
+    # self.homeAction.setShortcut(QKeySequence.Cancel)
+    self.homeAction.triggered.connect(lambda: self.emulateKeyEvent(KEY_Escape))
     self.viewer.addAction(self.homeAction)
 
 
@@ -184,6 +184,10 @@ class rMViewApp(QApplication):
     self.threadpool = QThreadPool()
     self.aboutToQuit.connect(self.joinWorkers)
     self.requestConnect()
+
+  def emulateKeyEvent(self, key):
+    if self.fbworker:
+      self.fbworker.keyEvent(key)
 
   def disableAutoOrientation(self):
     self.orient = 0
