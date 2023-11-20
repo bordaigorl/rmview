@@ -18,8 +18,10 @@ def timestamp_to_version(ts):
     return (2, 7, 0, 0)
   elif ts < SW_VER_TIMESTAMPS["2.9.1.236"]:
     return (2, 9, 0, 0)
-  else:
+  elif ts == SW_VER_TIMESTAMPS["2.9.1.236"]:
     return (2, 9, 1, 236)
+  else:
+    return (2, 9, 1, 9999) # Phony version number. Just needs to compare > 2.9.1.236
 
 
 # evtype_sync = 0
