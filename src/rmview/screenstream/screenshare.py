@@ -134,7 +134,7 @@ class ScreenShareStream(QRunnable):
   def run(self):
       log.info("Connecting to ScreenShare, make sure you enable it")
       try:
-        if self.ssh.softwareVersion > SW_VER_TIMESTAMPS['2.9.1.236']:
+        if self.ssh.softwareVersion > (2, 9, 1, 236):
           log.warning("Authenticating, please wait...")
           challengeReader = ChallengeReaderProtocol(self.runVnc)
           reactor.listenUDP(5901, challengeReader)
