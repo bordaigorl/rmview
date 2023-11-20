@@ -2,6 +2,8 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from .rmparams import timestamp_to_version
+
 
 import paramiko
 import struct
@@ -161,7 +163,20 @@ class rMConnect(QRunnable):
 
   def _getSwVersion(self):
     _, out, _ = self.client.exec_command("cat /etc/version")
-    return int(out.read().decode("utf-8"))
+    version_ts = int(out.read().decode("utf-8"))
+    version = timestamp_to_version(version_ts)
+
+    try:
+      _, out, err = self.client.exec_command(r"grep 'REMARKABLE_RELEASE_VERSION=' /usr/share/remarkable/update.conf "
+                                             r"| sed -r 's/(REMARKABLE_RELEASE_VERSION=)([0-9a-zA-Z.]+)/\2/'")
+      config_version = tuple(int(v) for v in out.read().decode("utf-8").strip().split('.'))
+      if (len(config_version) < 4): config_version += (0,)*(len(config_version) - 4);
+      version = config_version
+      log.debug("Using update.conf as SW version authority")
+    except Exception as e:
+      log.debug("Using /etc/version as SW version authority")
+
+    return version
 
 
   @pyqtSlot()
@@ -179,6 +194,7 @@ class rMConnect(QRunnable):
       self.client.hostname = self.address
       self.client.deviceVersion, self.client.fullDeviceVersion = self._getVersion()
       self.client.softwareVersion = self._getSwVersion()
+      log.info("Detected SW version: {}".format('.'.join(str(v) for v in self.client.softwareVersion)))
       self.signals.onConnect.emit(self.client)
     except Exception as e:
       log.error("Could not connect to %s: %s", self.address, e)

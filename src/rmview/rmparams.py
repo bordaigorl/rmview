@@ -9,6 +9,18 @@ SW_VER_TIMESTAMPS = {
   '2.9.1.236': 20210820111232
 }
 
+# This mapping was adapted from the above `SW_VER_TIMESTAMPS` dictionary. 
+# Newer versions do not use timestamp based versioning, and are likewise not represented here.
+def timestamp_to_version(ts):
+  if ts < SW_VER_TIMESTAMPS["2.7"]:
+    return (2, 6, 0, 0)
+  elif ts < SW_VER_TIMESTAMPS["2.9"]:
+    return (2, 7, 0, 0)
+  elif ts < SW_VER_TIMESTAMPS["2.9.1.236"]:
+    return (2, 9, 0, 0)
+  else:
+    return (2, 9, 1, 236)
+
 
 # evtype_sync = 0
 e_type_key = 1

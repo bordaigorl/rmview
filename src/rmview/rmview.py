@@ -306,7 +306,7 @@ class rMViewApp(QApplication):
     self.ssh = ssh
     self.viewer.setWindowTitle("rMview - " + ssh.hostname)
 
-    log.info("Detected %s", ssh.fullDeviceVersion)
+    log.info("Detected device: %s", ssh.fullDeviceVersion)
     version = ssh.deviceVersion
     if version not in [1, 2]:
       log.error("Device is unsupported: '%s' [%s]", ssh.fullDeviceVersion, version or "unknown device")
@@ -316,11 +316,11 @@ class rMViewApp(QApplication):
 
     backend = self.config.get('backend', 'auto')
     if backend == 'auto':
-      if ssh.softwareVersion >= SW_VER_TIMESTAMPS['2.9']:
+      if ssh.softwareVersion >= (2, 9, 0, 0):
         backend = 'screenshare'
       else:
         backend = 'vncserver'
-        if ssh.softwareVersion >= SW_VER_TIMESTAMPS['2.7']:
+        if ssh.softwareVersion >= (2, 7, 0, 0):
           log.warning("Detected version 2.7 or 2.8. The server might not work with these versions.")
 
     log.info("Using backend '%s'", backend)
