@@ -1,2 +1,29 @@
+[tool.poetry]
+name = "rmview"
+version = "2024.06.02"
+description = "A fast live viewer for reMarkable written in PyQt5"
+authors = ["bordaigorl <emanuele.dosualdo@gmail.com>"]
+license = "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+PyQt5 = "=5.14.2"
+paramiko = "^3.4.0"
+cryptography = "^42.0.8"
+Twisted = {extras = ["tls"], version = "^24.3.0"}
+PyJWT = "^2.8.0"
+
+[tool.poetry.extras]
+tunnel = ["sshtunnel"]
+
+[tool.poetry.build]
+generate-setup-file = true
+script = "build.py"
+
 [build-system]
-requires = ["setuptools", "wheel", "PyQt5"]
+requires = ["poetry-core", "setuptools", "PyQt5"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+rmview = "rmview.rmview:rmViewMain"

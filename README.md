@@ -29,51 +29,48 @@
 
 
 ## Installation
-
 The most efficient installation method is the semi-automatic one below, which requires a Python3 installation.
 If you are looking for a standalone executable, check the [releases page](https://github.com/bordaigorl/rmview/releases) for executable bundles.
 If there is no bundle for your operating system then follow the installation instructions below.
 
 As a basic prerequisite you will need [Python3][py3] on your computer.
+If your system uses `pipx` to handle global python packages, run:
+    pipx install .
+If it uses pip:
+    pip install .
 
-> :warning: Please make sure `pip` is pointing to the Python3 version if your system has Python2 as well.
-If not, use `pip3` instead of `pip` in what follows.
-
-> :warning: **WARNING** :warning::
-> If you use [Anaconda][anaconda], please install the dependencies via `conda` (and not `pip`) then run `pip install .`.
-
-### Semi-automatic installation
-
-The easiest installation method is by using `pip`, from the root folder of this repository:
-
-       pip install .
-
-(please note the command ends with a dot)
-which will install all required dependencies and install a new `rmview` command.
 If you want to use the SSH tunnel feature, install with
+    pip install .[tunnel]
 
-    pip install ".[tunnel]"
+Then, to run `rmview`, just execute:
+    rmview
 
-Then, from anywhere, you can execute `rmview` from the command line.
 The tool will ask for the connection parameters and then ask permission to install the VNC server on the tablet.
 Press <kbd>Auto install</kbd> to proceed.
 
+## Development installation
+For this, you'll need as well as [`poetry`][https://python-poetry.org/] installed.
+
+To install `poetry`, [refer to the docs][https://python-poetry.org/docs/#installation], or if `pipx` is installed on your system:
+    pipx install poetry
+if it isn't:
+    pip install -I poetry
+
+Then, install rmview's dependencies:
+    poetry install
+
+Or if you want to use the SSH tunnel feature, install with
+    poetry install -E tunnel
+
+Then, to run `rmview`, just execute:
+    poetry run rmview
+
+## System-wide installation
+Then, from anywhere, you can execute `rmview` from the command line.
+
 If you plan to modify the source code, use `pip install -e .` so that when executing `rmview` you will be running your custom version.
 
-### Manual installation
-
-Install the dependencies ([PyQt5][pyqt5], [Paramiko][paramiko], [Twisted][twisted], [PyJWT][pyjwt]) with `pip` or `conda` manually:
-
-    # install dependencies
-    pip install pyqt5 paramiko twisted pyjwt
-    pip install sshtunnel  # optional
-    # build resources file
-    pyrcc5 -o src/rmview/resources.py resources.qrc
-
-Then you can run the program with `python -m rmview` from the `src` folder.
-
 ### Using Docker
-
 This project contains a `Dockerfile` so that `rmview` and all its dependencies can be installed and run inside a Docker container.
 Since `rmview` not only reads your local configuration but also needs an X11 display, you should run `docker-run.sh` which takes care of the host mappings.
 Please note that `docker-run.sh` is written for Unix-like OSes and expects your rmview configuration inside your local `$HOME/.config/rmview/` folder.
