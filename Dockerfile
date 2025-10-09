@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y \
   libxcb-image0 \
   libxkbcommon-x11-0 \
   && apt-get clean
-RUN apt-get clean
 WORKDIR /rmview
 COPY resources.qrc setup.cfg setup.py ./
 COPY assets ./assets
