@@ -2,6 +2,14 @@
 
 [![Demo](https://raw.githubusercontent.com/bordaigorl/rmview/vnc/screenshot.png)][demo]
 
+<div align="center">
+
+|       |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| CI/CD | [![CD - Build Windows](https://github.com/bordaigorl/rmview/actions/workflows/windows-binary.yml/badge.svg)](https://github.com/bordaigorl/rmview/actions/workflows/windows-binary.yml)                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Meta  | [![Hatch project](https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg)](https://github.com/pypa/hatch) [![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v0.json)](https://github.com/charliermarsh/ruff) [![code style - Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![types - Mypy](https://img.shields.io/badge/types-Mypy-blue.svg)](https://github.com/python/mypy) [![License - GPL-3.0-only](https://img.shields.io/badge/license-GPL-9400d3.svg)](https://spdx.org/licenses/GPL-3.0-only.html) |
+
+</div>
 
 ## Features
 
@@ -18,10 +26,10 @@
 
 ## Compatibility
 
-|                | ScreenShare        | VNC Server         | rm2fb              |
-| -------------- | :----------------: | :----------------: | :----------------: |
-| RM1/2  < v2.9  | :x:                | :white_check_mark: | :white_check_mark: |
-| RM1/2 >= v2.9  | :white_check_mark: | :x:                | :x:                |
+|               |    ScreenShare     |     VNC Server     |       rm2fb        |
+| ------------- | :----------------: | :----------------: | :----------------: |
+| RM1/2  < v2.9 |        :x:         | :white_check_mark: | :white_check_mark: |
+| RM1/2 >= v2.9 | :white_check_mark: |        :x:         |        :x:         |
 
 
 > :warning: **Update 2.9+ users** :warning::
@@ -101,19 +109,19 @@ The supported configuration settings are below.
 Look in file `example.json` for an example configuration.
 All the settings are optional.
 
-| Setting key              | Values                                                  | Default       |
-| ------------------------ | ------------------------------------------------------- | ------------- |
-| `ssh`                    | Connection parameters (see below)                       | `{}`          |
-| `backend`                | `"auto"`, `"screenshare"`, `"vncserver"`                | `"auto"`      |
-| `orientation`            | `"landscape"`, `"portrait"`, `"auto"`                   | `"landscape"` |
-| `pen_size`               | diameter of pointer in px                               | `15`          |
-| `pen_color`              | color of pointer and trail                              | `"red"`       |
-| `pen_trail`              | persistence of trail in ms                              | `200`         |
-| `background_color`       | color of window                                         | `"white"`     |
-| `invert_colors`          | if true, start the tablet with inverted colors          | `false`       |
-| `hide_pen_on_press`      | if true, the pointer is hidden while writing            | `true`        |
-| `show_pen_on_lift`       | if true, the pointer is shown when lifting the pen      | `true`        |
-| `forward_mouse_events`   | Send mouse events to tablet (see below)                 | `false`       |
+| Setting key            | Values                                             | Default       |
+| ---------------------- | -------------------------------------------------- | ------------- |
+| `ssh`                  | Connection parameters (see below)                  | `{}`          |
+| `backend`              | `"auto"`, `"screenshare"`, `"vncserver"`           | `"auto"`      |
+| `orientation`          | `"landscape"`, `"portrait"`, `"auto"`              | `"landscape"` |
+| `pen_size`             | diameter of pointer in px                          | `15`          |
+| `pen_color`            | color of pointer and trail                         | `"red"`       |
+| `pen_trail`            | persistence of trail in ms                         | `200`         |
+| `background_color`     | color of window                                    | `"white"`     |
+| `invert_colors`        | if true, start the tablet with inverted colors     | `false`       |
+| `hide_pen_on_press`    | if true, the pointer is hidden while writing       | `true`        |
+| `show_pen_on_lift`     | if true, the pointer is shown when lifting the pen | `true`        |
+| `forward_mouse_events` | Send mouse events to tablet (see below)            | `false`       |
 
 **PLEASE NOTE:**
 When `backend` is `auto`, if the tablet is using version 2.9 and above then `screenshare` is used;
@@ -129,17 +137,17 @@ This option is only available if using `"backend": "vncserver"`, which in turn i
 
 Connection parameters are provided as a dictionary with the following keys (all optional):
 
-| Parameter         | Values                                                  | Comments                              |
-| ----------------- | ------------------------------------------------------- | ------------------------------------- |
-| `address`         | IP of remarkable                                        | tool prompts for it if missing        |
-| `auth_method`     | Either `"password"` or `"key"`                          | defaults to password if key not given |
-| `username`        | Username for ssh access on reMarkable                   | default: `"root"`                     |
-| `password`        | Password provided by reMarkable                         | not needed if key provided            |
-| `key`             | Local path to key for ssh                               | not needed if password provided       |
-| `timeout`         | Connection timeout in seconds                           | default: 1                            |
-| `host_key_policy` | `"ask"`, `"ignore_new"`, `"ignore_all"`, `"auto_add"`   | default: `"ask"` (description below)  |
-| `tunnel`          | True to connect to VNC server over a local SSH tunnel   | default: `false` (description below)  |
-| `tunnel_compression`   | True to enable compression for SSH tunnel          | default: `false` (description below)  |
+| Parameter            | Values                                                | Comments                              |
+| -------------------- | ----------------------------------------------------- | ------------------------------------- |
+| `address`            | IP of remarkable                                      | tool prompts for it if missing        |
+| `auth_method`        | Either `"password"` or `"key"`                        | defaults to password if key not given |
+| `username`           | Username for ssh access on reMarkable                 | default: `"root"`                     |
+| `password`           | Password provided by reMarkable                       | not needed if key provided            |
+| `key`                | Local path to key for ssh                             | not needed if password provided       |
+| `timeout`            | Connection timeout in seconds                         | default: 1                            |
+| `host_key_policy`    | `"ask"`, `"ignore_new"`, `"ignore_all"`, `"auto_add"` | default: `"ask"` (description below)  |
+| `tunnel`             | True to connect to VNC server over a local SSH tunnel | default: `false` (description below)  |
+| `tunnel_compression` | True to enable compression for SSH tunnel             | default: `false` (description below)  |
 
 The `address` parameter can be either:
 - a single string, in which case the address is used for connection

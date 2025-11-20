@@ -1,5 +1,8 @@
 name: Windows Binary Package
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
