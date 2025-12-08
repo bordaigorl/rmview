@@ -6,6 +6,7 @@ mkdir -p $CONFIG_DIR
 xhost local:root
 docker build -t rmview .
 docker run \
+  --env XDG_SESSION_TYPE=x11 \
   --env DISPLAY=$DISPLAY \
   --network host \
   --volume $CONFIG_DIR:/root/.config \
