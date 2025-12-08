@@ -148,7 +148,7 @@ class rMViewApp(QApplication):
     self.viewer.setWindowTitle("rMview")
     self.viewer.show()
 
-    # Display connecting image until we successfuly connect
+    # Display connecting image until we successfully connect
     self.viewer.setImage(QImage(':/assets/connecting.png'))
 
     self.orient = 0
@@ -599,7 +599,7 @@ def rmViewMain():
   log.info("STARTING: %s", time.asctime())
   QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
   app = rMViewApp(sys.argv)
-  # We register custom signal handler so we can gracefuly stop app with CTRL+C when QT main loop is
+  # We register custom signal handler so we can gracefully stop app with CTRL+C when QT main loop is
   # running
   signal.signal(signal.SIGINT, lambda *args: app.quit())
   ecode = app.exec_()

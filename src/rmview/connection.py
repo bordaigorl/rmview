@@ -127,7 +127,7 @@ class rMConnect(QRunnable):
           # ideally we would want to always load the system ones
           # and have the local keys have precedence, but paramiko gives
           # always precedence to system keys
-          # There is extremly slow in system with many known host entries... :/
+          # There is extremely slow in system with many known host entries... :/
           # See https://github.com/paramiko/paramiko/issues/191
           self.client.load_system_host_keys()
           log.info("System default known host file loaded")
