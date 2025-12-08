@@ -3,7 +3,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 from .rmparams import timestamp_to_version
-
+from .ssh_key import from_private_key_file
 
 import paramiko
 import struct
@@ -82,10 +82,10 @@ class rMConnect(QRunnable):
 
       if password:
         # password protected key file, password provided in the config
-        self.pkey = paramiko.RSAKey.from_private_key_file(key, password=password)
+        self.pkey = from_private_key_file(key, password=password)
       else:
         try:
-          self.pkey = paramiko.RSAKey.from_private_key_file(key)
+          self.pkey = from_private_key_file(key)
         except paramiko.ssh_exception.PasswordRequiredException:
           passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:",
                                                 QLineEdit.Password)
