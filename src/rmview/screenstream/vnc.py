@@ -190,28 +190,30 @@ class VncStreamer(QRunnable):
 
   def _get_ssh_tunnel(self):
       open_tunnel_kwargs = {
-        "ssh_username" : self.ssh_config.get("username", "root"),
+          "ssh_username": self.ssh_config.get("username", "root"),
       }
 
       if self.ssh_config.get("auth_method", "password") == "key":
           open_tunnel_kwargs["ssh_pkey"] = self.ssh_config["key"]
 
           if self.ssh_config.get("password", None):
-            open_tunnel_kwargs["ssh_private_key_password"] = self.ssh_config["password"]
+              open_tunnel_kwargs["ssh_private_key_password"] = self.ssh_config["password"]
       else:
-        open_tunnel_kwargs["ssh_password"] = self.ssh_config["password"]
+          open_tunnel_kwargs["ssh_password"] = self.ssh_config["password"]
 
       try:
-        import sshtunnel
-      except ModuleNotFoundError:
-        raise Exception("You need to install `sshtunnel` to use the tunnel feature")
+          import sshtunnel
+      except ModuleNotFoundError as exc:
+          raise Exception("You need to install `sshtunnel` to use the tunnel feature") from exc
+
       tunnel = sshtunnel.open_tunnel(
-        (self.ssh.hostname, 22),
-        remote_bind_address=("127.0.0.1", 5900),
-        # We don't specify port so library auto assigns random unused one in the high range
-        local_bind_address=('127.0.0.1',),
-        compression=self.ssh_config.get("tunnel_compression", False),
-        **open_tunnel_kwargs)
+          (self.ssh.hostname, 22),
+          remote_bind_address=("127.0.0.1", 5900),
+          # We don't specify port so library auto assigns random unused one in the high range
+          local_bind_address=('127.0.0.1',),
+          compression=self.ssh_config.get("tunnel_compression", False),
+          **open_tunnel_kwargs
+      )
 
       return tunnel
 
