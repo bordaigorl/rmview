@@ -138,6 +138,7 @@ Connection parameters are provided as a dictionary with the following keys (all 
 | `key`             | Local path to key for ssh                               | not needed if password provided       |
 | `timeout`         | Connection timeout in seconds                           | default: 1                            |
 | `host_key_policy` | `"ask"`, `"ignore_new"`, `"ignore_all"`, `"auto_add"`   | default: `"ask"` (description below)  |
+| `key_type`        | `"rsa"`, `"ecdsa"`, `"ed25519"`                         | override key type inference           |
 | `tunnel`          | True to connect to VNC server over a local SSH tunnel   | default: `false` (description below)  |
 | `tunnel_compression`   | True to enable compression for SSH tunnel          | default: `false` (description below)  |
 
@@ -149,6 +150,8 @@ To establish a connection with the tablet, you can use any of the following:
 - Leave `auth_method`, `password` and `key` unspecified: this will ask for a password
 - Specify `"auth_method": "key"` to use a SSH key. In case an SSH key hasn't already been associated with the tablet, you can provide its path with the `key` setting.
   If key is password protected, you can specify key passphrase using `password` parameter.
+  If the key type cannot be inferred from the filename (e.g. `id_rsa`, `id_ecdsa`, `id_ed25519`),
+  you can explicitly set it using the `key_type` parameter.
 - Provide a `password` in settings
 
 If `auth_method` is `password` but no password is specified, then the tool will ask for the password on connection.

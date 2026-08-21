@@ -53,6 +53,32 @@ HOST_KEY_POLICY = {
   "auto_add": AddNewHostKey
 }
 
+KEY_CLASS_MAP = {
+  'id_rsa':       paramiko.RSAKey,
+  'id_ecdsa':     paramiko.ECDSAKey,
+  'id_ed25519':   paramiko.Ed25519Key,
+}
+
+KEY_TYPE_MAP = {
+  'rsa':     paramiko.RSAKey,
+  'ecdsa':   paramiko.ECDSAKey,
+  'ed25519': paramiko.Ed25519Key,
+}
+
+def _load_private_key(key_path, password=None):
+  """Load a private key from a file, inferring the type from the filename."""
+  basename = os.path.basename(key_path)
+  # Strip any suffix (e.g. id_ecdsa_something -> id_ecdsa)
+  key_class = None
+  for prefix, cls in KEY_CLASS_MAP.items():
+    if basename.startswith(prefix):
+      key_class = cls
+      break
+  if key_class is None:
+    key_class = paramiko.RSAKey  # default
+    log.debug("Could not infer key type from filename '%s', defaulting to RSA", basename)
+  log.debug("Loading key '%s' as %s", key_path, key_class.__name__)
+  return key_class.from_private_key_file(key_path, password=password)
 
 
 class rMConnectSignals(QObject):
@@ -66,7 +92,7 @@ class rMConnect(QRunnable):
   _known_hosts = None
 
   def __init__(self, address='10.11.99.1', username='root', password=None, key=None, timeout=3,
-               onConnect=None, onError=None, host_key_policy=None, known_hosts=None, auth_method=None, **kwargs):
+               onConnect=None, onError=None, host_key_policy=None, known_hosts=None, auth_method=None, key_type=None, **kwargs):
     super(rMConnect, self).__init__()
 
     self.address = address
@@ -74,6 +100,7 @@ class rMConnect(QRunnable):
     self.password = password
     self.timeout = timeout
     self.auth_method = auth_method
+    self.key_type = key_type
     self.host_key_policy = host_key_policy
     self._known_hosts = known_hosts
 
@@ -82,15 +109,15 @@ class rMConnect(QRunnable):
 
       if password:
         # password protected key file, password provided in the config
-        self.pkey = paramiko.RSAKey.from_private_key_file(key, password=password)
+        self.pkey = self._load_key(key, password=passphrase)
       else:
         try:
-          self.pkey = paramiko.RSAKey.from_private_key_file(key)
+          self.pkey = self._load_key(key)
         except paramiko.ssh_exception.PasswordRequiredException:
           passphrase, ok = QInputDialog.getText(None, "Configuration","SSH key passphrase:",
                                                 QLineEdit.Password)
           if ok:
-            self.pkey = paramiko.RSAKey.from_private_key_file(key, password=passphrase)
+            self.pkey = self._load_key(key, password=passphrase)
           else:
             raise Exception("A passphrase for SSH key is required")
     else:
@@ -108,6 +135,21 @@ class rMConnect(QRunnable):
       self.signals.onConnect.connect(onConnect)
     if callable(onError):
       self.signals.onError.connect(onError)
+
+  def _load_key(self, key_path, password=None):
+    """Load a private key, using key_type config override or filename inference."""
+    if self.key_type is not None:
+      key_class = KEY_TYPE_MAP.get(self.key_type.lower())
+      if key_class is None:
+        raise ValueError(
+          "Unknown key_type '%s'. Valid values are: %s"
+          % (self.key_type, ', '.join(KEY_TYPE_MAP.keys()))
+        )
+      log.debug("Loading key '%s' as %s (forced by key_type setting)",
+                key_path, key_class.__name__)
+      return key_class.from_private_key_file(key_path, password=password)
+    return _load_private_key(key_path, password=password)
+
 
   def _initialize(self):
     # NOTE: Loading system known hosts can take a long time that's why it should happen inside
